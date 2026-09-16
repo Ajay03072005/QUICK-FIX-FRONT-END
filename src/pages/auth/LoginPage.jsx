@@ -1,0 +1,171 @@
+import React, { useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Wrench, Mail, Lock, User, ShieldCheck, ArrowRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { authApi } from '../../api/authApi';
+import { useNotification } from '../../context/NotificationContext';
+
+export default function LoginPage() {
+  const [searchParams] = useSearchParams();
+  const initialRole = searchParams.get('role') === 'provider' ? 'PROVIDER' : 'CUSTOMER';
+
+  const [role, setRole] = useState(initialRole);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const { login } = useAuth();
+  const { showToast } = useNotification();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const data = await authApi.login({ email, password, role });
+      login(data.role, data.user);
+      showToast(`Logged in successfully as ${data.role}`, 'success');
+      if (data.role === 'PROVIDER') {
+        navigate('/provider/dashboard');
+      } else {
+        navigate('/customer/dashboard');
+      }
+    } catch (err) {
+      showToast('Login failed. Please check your credentials.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickDemoLogin = (demoRole) => {
+    setLoading(true);
+    authApi.login({ email: `${demoRole.toLowerCase()}@example.com`, password: 'password', role: demoRole }).then(data => {
+      login(data.role, data.user);
+      showToast(`Demo Logged in as ${demoRole}`, 'success');
+      if (demoRole === 'PROVIDER') {
+        navigate('/provider/dashboard');
+      } else {
+        navigate('/customer/dashboard');
+      }
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+      
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
+        <Link to="/" className="inline-flex items-center gap-2.5">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30">
+            <Wrench className="w-6 h-6" />
+          </div>
+          <span className="text-3xl font-extrabold text-white">
+            Quick<span className="text-indigo-400">-Fix</span>
+          </span>
+        </Link>
+        <h2 className="text-xl font-bold text-slate-200">Welcome Back</h2>
+        <p className="text-xs text-slate-400">Sign in to your Quick-Fix account</p>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-6 shadow-2xl rounded-3xl border border-slate-200 sm:px-10 space-y-6">
+          
+          {/* Role selector tabs */}
+          <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setRole('CUSTOMER')}
+              className={`py-2 rounded-lg transition ${
+                role === 'CUSTOMER' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              I am a Customer
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole('PROVIDER')}
+              className={`py-2 rounded-lg transition ${
+                role === 'PROVIDER' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              I am a Service Provider
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email or Phone</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  required
+                  placeholder={role === 'CUSTOMER' ? 'ajay.ram@example.com' : 'kumar.services@example.com'}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase">Password</label>
+                <Link to="/forgot-password" className="text-xs font-bold text-indigo-600 hover:underline">
+                  Forgot Password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2"
+            >
+              {loading ? 'Logging in...' : `Login as ${role}`} <ArrowRight className="w-4 h-4" />
+            </button>
+          </form>
+
+          {/* Quick Demo Buttons */}
+          <div className="pt-4 border-t border-slate-100 space-y-2">
+            <span className="block text-[11px] font-bold text-slate-400 text-center uppercase tracking-wider">
+              Instant Demo Access
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleQuickDemoLogin('CUSTOMER')}
+                className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+              >
+                Demo Customer
+              </button>
+              <button
+                onClick={() => handleQuickDemoLogin('PROVIDER')}
+                className="py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition"
+              >
+                Demo Provider
+              </button>
+            </div>
+          </div>
+
+          <div className="text-center text-xs text-slate-500">
+            Don't have an account?{' '}
+            <Link to={`/register?role=${role.toLowerCase()}`} className="font-bold text-indigo-600 hover:underline">
+              Create Account
+            </Link>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
