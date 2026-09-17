@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Wrench, CheckCircle2, Clock, DollarSign, ArrowRight, ShieldCheck, MapPin, User, AlertCircle, PlayCircle, ToggleLeft, ToggleRight
 } from 'lucide-react';
-import Header from '../../components/common/Header';
+import ProviderPortalNav from '../../components/provider/ProviderPortalNav';
 import Footer from '../../components/common/Footer';
 import StatusBadge from '../../components/common/StatusBadge';
 import { providerApi } from '../../api/providerApi';
@@ -47,23 +47,7 @@ export default function ProviderDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
-      <Header />
-
-      {/* Sub Navbar for Provider Portal */}
-      <div className="bg-slate-900 text-white border-b border-slate-800 py-3 px-4">
-        <div className="container mx-auto flex items-center justify-between overflow-x-auto text-xs font-semibold gap-6">
-          <span className="text-cyan-400 font-extrabold uppercase tracking-wider shrink-0">Quick-Fix Partner Portal</span>
-          <div className="flex items-center gap-6 shrink-0">
-            <Link to="/provider/dashboard" className="text-white hover:text-cyan-400">Dashboard</Link>
-            <Link to="/provider/booking-requests" className="text-slate-300 hover:text-white">Booking Requests ({requests.length})</Link>
-            <Link to="/provider/active-service" className="text-slate-300 hover:text-white">Active Service</Link>
-            <Link to="/provider/history" className="text-slate-300 hover:text-white">History</Link>
-            <Link to="/provider/availability" className="text-slate-300 hover:text-white">Availability</Link>
-            <Link to="/provider/services" className="text-slate-300 hover:text-white">My Services</Link>
-            <Link to="/provider/profile" className="text-slate-300 hover:text-white">Profile</Link>
-          </div>
-        </div>
-      </div>
+      <ProviderPortalNav />
 
       <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 space-y-8">
         

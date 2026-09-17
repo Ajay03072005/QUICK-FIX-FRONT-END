@@ -4,8 +4,8 @@ import { Wrench, Shield, Phone, Mail, MapPin, Heart } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-400 pt-16 pb-12 border-t border-slate-800">
-      <div className="container mx-auto px-4 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+    <footer className="mt-auto bg-slate-900 text-slate-400 border-t border-slate-800">
+      <div className="container mx-auto grid grid-cols-1 gap-10 px-4 py-12 sm:py-16 md:grid-cols-2 lg:grid-cols-5 lg:px-8">
         
         {/* Col 1: Brand USP */}
         <div className="lg:col-span-2 space-y-4">
@@ -20,9 +20,9 @@ export default function Footer() {
           <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
             Quick-Fix is an on-demand local service booking platform connecting customers with top verified local technicians, plumbers, electricians, and cleaning professionals based on distance & transparency.
           </p>
-          <div className="flex items-center gap-4 text-xs font-semibold text-slate-300 pt-2">
-            <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-emerald-400" /> 100% Verified Providers</span>
-            <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-indigo-400" /> Location First</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2 text-xs font-semibold text-slate-300">
+            <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 shrink-0 text-emerald-400" /> Verified Providers</span>
+            <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 shrink-0 text-indigo-400" /> Location First</span>
           </div>
         </div>
 
@@ -44,9 +44,9 @@ export default function Footer() {
           <ul className="space-y-2.5 text-sm">
             <li><Link to="/find-nearby" className="hover:text-white transition">Find Nearby Providers</Link></li>
             <li><Link to="/#how-it-works" className="hover:text-white transition">How It Works</Link></li>
-            <li><Link to="/register?role=provider" className="hover:text-white transition">Become a Partner Provider</Link></li>
-            <li><Link to="/login" className="hover:text-white transition">Customer Login</Link></li>
-            <li><Link to="/login?role=provider" className="hover:text-white transition">Provider Portal</Link></li>
+            <li><Link to="/provider/register" className="hover:text-white transition">Become a Partner Provider</Link></li>
+            <li><Link to="/customer/login" className="hover:text-white transition">Customer Login</Link></li>
+            <li><Link to="/provider/login" className="hover:text-white transition">Provider Portal</Link></li>
           </ul>
         </div>
 

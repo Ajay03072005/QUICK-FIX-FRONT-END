@@ -32,6 +32,10 @@ export default function ProviderSelectionPage() {
 
   const handleSelectProvider = (prov) => {
     const distance = calculateDistance(bookingDraft.address, prov);
+    if (distance === null) {
+      showToast('Provider matching requires coordinates for both the saved address and provider.', 'error');
+      return;
+    }
     const serviceCharge = bookingDraft.service?.startingPrice;
     const distanceCharge = calculateDistanceCharge(distance);
     updateDraft({
@@ -258,7 +262,7 @@ export default function ProviderSelectionPage() {
 
 function calculateDistance(address, provider) {
   if (![address?.latitude, address?.longitude, provider?.latitude, provider?.longitude].every(Number.isFinite)) {
-    return 0;
+    return null;
   }
   const latDistance = (provider.latitude - address.latitude) * Math.PI / 180;
   const lonDistance = (provider.longitude - address.longitude) * Math.PI / 180;

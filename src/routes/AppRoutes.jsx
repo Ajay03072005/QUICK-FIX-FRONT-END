@@ -25,6 +25,7 @@ import SavedAddressesPage from '../pages/customer/SavedAddressesPage';
 import CustomerProfilePage from '../pages/customer/CustomerProfilePage';
 import CustomerNotificationsPage from '../pages/customer/CustomerNotificationsPage';
 import ReviewsPage from '../pages/customer/ReviewsPage';
+import AdminPortalPage from '../pages/admin/AdminPortalPage';
 
 // Provider Pages
 import ProviderDashboard from '../pages/provider/ProviderDashboard';
@@ -63,6 +64,11 @@ export default function AppRoutes() {
       {/* Auth Routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/customer/login" element={<LoginPage />} />
+      <Route path="/customer/register" element={<RegisterPage />} />
+      <Route path="/provider/login" element={<LoginPage />} />
+      <Route path="/provider/register" element={<RegisterPage />} />
+      <Route path="/admin" element={<AdminPortalPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* Customer Routes */}

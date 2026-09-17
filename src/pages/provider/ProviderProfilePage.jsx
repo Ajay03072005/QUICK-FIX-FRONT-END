@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ShieldCheck, MapPin, Wrench, Phone, Mail, Award, Clock } from 'lucide-react';
-import Header from '../../components/common/Header';
+import ProviderPortalNav from '../../components/provider/ProviderPortalNav';
 import Footer from '../../components/common/Footer';
 import StarRating from '../../components/common/StarRating';
 import { useAuth } from '../../context/AuthContext';
@@ -16,7 +16,7 @@ export default function ProviderProfilePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
-      <Header />
+      <ProviderPortalNav />
 
       <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 space-y-6 max-w-4xl">
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-6">

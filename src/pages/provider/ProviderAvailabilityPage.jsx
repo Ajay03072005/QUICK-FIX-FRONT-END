@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Clock, Calendar, CheckCircle2 } from 'lucide-react';
-import Header from '../../components/common/Header';
+import ProviderPortalNav from '../../components/provider/ProviderPortalNav';
 import Footer from '../../components/common/Footer';
 import { useNotification } from '../../context/NotificationContext';
 
@@ -30,7 +30,7 @@ export default function ProviderAvailabilityPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
-      <Header />
+      <ProviderPortalNav />
 
       <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 space-y-6 max-w-3xl">
         <div className="flex items-center justify-between">

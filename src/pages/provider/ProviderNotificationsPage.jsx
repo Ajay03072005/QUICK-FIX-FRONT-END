@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, ArrowRight } from 'lucide-react';
-import Header from '../../components/common/Header';
+import ProviderPortalNav from '../../components/provider/ProviderPortalNav';
 import Footer from '../../components/common/Footer';
 import { Link } from 'react-router-dom';
 import { bookingApi } from '../../api/bookingApi';
@@ -25,7 +25,7 @@ export default function ProviderNotificationsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
-      <Header />
+      <ProviderPortalNav />
 
       <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 space-y-6 max-w-3xl">
         <div>

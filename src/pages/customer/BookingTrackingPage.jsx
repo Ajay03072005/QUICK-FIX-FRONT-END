@@ -7,11 +7,16 @@ import StatusTimeline from '../../components/booking/StatusTimeline';
 import StatusBadge from '../../components/common/StatusBadge';
 import LeafletMapComponent from '../../components/map/LeafletMapComponent';
 import { bookingApi } from '../../api/bookingApi';
+import { useNotification } from '../../context/NotificationContext';
 
 export default function BookingTrackingPage() {
   const { uniqueId } = useParams();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [changingProvider, setChangingProvider] = useState(false);
+  const [providers, setProviders] = useState([]);
+  const [updating, setUpdating] = useState(false);
+  const { showToast } = useNotification();
 
   useEffect(() => {
     fetchBookingDetails();
@@ -21,7 +26,49 @@ export default function BookingTrackingPage() {
     bookingApi.getBookingById(uniqueId).then(data => {
       setBooking(data);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
+  };
+
+  const canModifyProvider = ['PENDING', 'PROVIDER_SELECTED', 'WAITING_FOR_PROVIDER'].includes(booking?.status);
+
+  const handleCancelBooking = async () => {
+    if (!window.confirm('Cancel this booking request?')) return;
+    setUpdating(true);
+    try {
+      const updated = await bookingApi.cancelBooking(booking.bookingUniqueId);
+      setBooking(updated);
+      showToast('Booking request cancelled.', 'success');
+    } catch {
+      showToast('This booking can no longer be cancelled.', 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleOpenProviderChange = async () => {
+    setUpdating(true);
+    try {
+      setProviders(await bookingApi.findNearbyProvidersForBooking(booking.bookingUniqueId));
+      setChangingProvider(true);
+    } catch {
+      showToast('Unable to load nearby providers.', 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleChangeProvider = async (providerUniqueId) => {
+    setUpdating(true);
+    try {
+      const updated = await bookingApi.selectProviderForBooking(booking.bookingUniqueId, providerUniqueId);
+      setBooking(updated);
+      setChangingProvider(false);
+      showToast('Provider changed. Your new provider will review the request.', 'success');
+    } catch {
+      showToast('Provider could not be changed after acceptance.', 'error');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   if (loading || !booking) {
@@ -80,6 +127,42 @@ export default function BookingTrackingPage() {
             </div>
           </div>
         </div>
+
+        {canModifyProvider && (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
+            <div>
+              <h2 className="text-sm font-extrabold text-amber-950">Waiting for provider acceptance</h2>
+              <p className="mt-1 text-xs text-amber-800">You may change the selected provider or cancel this request until a provider accepts it.</p>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 sm:mt-0">
+              <button onClick={handleOpenProviderChange} disabled={updating} className="rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-indigo-700 shadow-sm ring-1 ring-inset ring-indigo-200 hover:bg-indigo-50">
+                Change Provider
+              </button>
+              <button onClick={handleCancelBooking} disabled={updating} className="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700">
+                Cancel Booking
+              </button>
+            </div>
+          </section>
+        )}
+
+        {changingProvider && (
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div><h2 className="font-extrabold text-slate-900">Choose a new provider</h2><p className="text-xs text-slate-500">Only available before acceptance.</p></div>
+              <button onClick={() => setChangingProvider(false)} className="text-xs font-bold text-slate-500 hover:text-slate-900">Close</button>
+            </div>
+            {providers.length === 0 ? <p className="text-sm text-slate-500">No alternative providers are available nearby.</p> : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {providers.map((provider) => (
+                  <button key={provider.providerUniqueId} disabled={updating} onClick={() => handleChangeProvider(provider.providerUniqueId)} className="rounded-2xl border border-slate-200 p-4 text-left hover:border-indigo-300 hover:bg-indigo-50">
+                    <span className="block font-bold text-slate-900">{provider.providerName}</span>
+                    <span className="mt-1 block text-xs text-slate-500">{provider.distance} km away · ₹{provider.totalAmount}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Split Grid: Status Timeline + Live Map */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

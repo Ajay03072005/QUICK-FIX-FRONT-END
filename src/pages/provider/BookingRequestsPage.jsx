@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, XCircle, MapPin, Calendar, Clock, User, ShieldCheck } from 'lucide-react';
-import Header from '../../components/common/Header';
+import ProviderPortalNav from '../../components/provider/ProviderPortalNav';
 import Footer from '../../components/common/Footer';
 import EmptyState from '../../components/common/EmptyState';
 import { bookingApi } from '../../api/bookingApi';
@@ -47,7 +47,7 @@ export default function BookingRequestsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
-      <Header />
+      <ProviderPortalNav />
 
       <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 space-y-6 max-w-4xl">
         <div>

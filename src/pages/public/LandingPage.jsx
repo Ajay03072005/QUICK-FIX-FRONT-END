@@ -70,7 +70,7 @@ export default function LandingPage() {
                 Find a Service <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
-                to="/register?role=provider"
+                to="/provider/register"
                 className="px-8 py-3.5 bg-white/10 hover:bg-white/15 text-white font-semibold rounded-2xl backdrop-blur-md border border-white/20 transition text-base"
               >
                 Become a Provider
@@ -147,11 +147,11 @@ export default function LandingPage() {
                     {getCategoryIcon(cat.icon)}
                   </div>
                   <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full group-hover:bg-indigo-100 group-hover:text-indigo-700 transition">
-                    Active DB
+                    Available
                   </span>
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition mb-1">{cat.name}</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">Direct DB mapped service type category</p>
+                <p className="text-xs text-slate-500 leading-relaxed">Find professionals nearby and compare options.</p>
               </Link>
             ))}
           </div>

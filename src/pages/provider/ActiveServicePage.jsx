@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { PlayCircle, CheckCircle2, Phone, MapPin, ArrowLeft } from 'lucide-react';
-import Header from '../../components/common/Header';
+import ProviderPortalNav from '../../components/provider/ProviderPortalNav';
 import Footer from '../../components/common/Footer';
 import StatusBadge from '../../components/common/StatusBadge';
 import StatusTimeline from '../../components/booking/StatusTimeline';
@@ -17,15 +17,15 @@ export default function ActiveServicePage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchActiveBooking();
+    if (uniqueId) fetchActiveBooking();
+    else setLoading(false);
   }, [uniqueId]);
 
   const fetchActiveBooking = () => {
-    const id = uniqueId || '1';
-    bookingApi.getBookingById(id).then(data => {
+    bookingApi.getBookingById(uniqueId).then(data => {
       setBooking(data);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   };
 
   const handleStartService = async () => {
@@ -40,11 +40,25 @@ export default function ActiveServicePage() {
     showToast('Service Marked Completed! Invoice generated.', 'success');
   };
 
-  if (loading || !booking) {
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50">
-        <Header />
+        <ProviderPortalNav />
         <div className="container mx-auto px-4 py-20 text-center">Loading active service...</div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-50">
+        <ProviderPortalNav />
+        <main className="container mx-auto px-4 py-20 flex-1 text-center space-y-4">
+          <h1 className="text-2xl font-extrabold text-slate-900">Active booking not found</h1>
+          <p className="text-sm text-slate-600">Select a booking from your dashboard to manage the service.</p>
+          <Link to="/provider/dashboard" className="inline-flex px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm">Back to Dashboard</Link>
+        </main>
         <Footer />
       </div>
     );
@@ -56,7 +70,7 @@ export default function ActiveServicePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
-      <Header />
+      <ProviderPortalNav />
 
       <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 space-y-6 max-w-4xl">
         <div className="flex items-center justify-between">

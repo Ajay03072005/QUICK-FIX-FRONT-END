@@ -7,17 +7,21 @@ import StatusBadge from '../../components/common/StatusBadge';
 
 export default function BookingConfirmationPage() {
   const location = useLocation();
-  const booking = location.state?.booking || {
-    uniqueId: 'BKG001',
-    serviceName: 'AC Servicing & Jet Wash',
-    providerName: 'Kumar AC & Electrical Services',
-    bookingDate: '2026-09-20',
-    bookingTime: '10:30 AM',
-    customerAddress: 'Coimbatore',
-    totalPrice: 400,
-    totalAmount: 400,
-    status: 'PENDING'
-  };
+  const booking = location.state?.booking;
+
+  if (!booking) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
+        <Header />
+        <main className="container mx-auto px-4 py-20 flex-1 max-w-xl text-center space-y-4">
+          <h1 className="text-2xl font-extrabold text-slate-900">Booking not found</h1>
+          <p className="text-sm text-slate-600">Open this page from a confirmed booking or view your saved bookings.</p>
+          <Link to="/customer/bookings" className="inline-flex px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm">View My Bookings</Link>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans">

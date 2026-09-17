@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Wrench, Mail, Lock, User, Phone, MapPin, Briefcase, FileText, ArrowRight, ShieldCheck } from 'lucide-react';
 import { authApi } from '../../api/authApi';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 
 export default function RegisterPage() {
-  const [searchParams] = useSearchParams();
-  const initialRole = searchParams.get('role') === 'provider' ? 'PROVIDER' : 'CUSTOMER';
-
-  const [role, setRole] = useState(initialRole);
+  const location = useLocation();
+  const role = location.pathname.startsWith('/provider/') ? 'PROVIDER' : 'CUSTOMER';
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -67,26 +65,8 @@ export default function RegisterPage() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
         <div className="bg-white py-8 px-6 shadow-2xl rounded-3xl border border-slate-200 sm:px-10 space-y-6">
           
-          {/* Role selector */}
-          <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setRole('CUSTOMER')}
-              className={`py-2.5 rounded-lg transition ${
-                role === 'CUSTOMER' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              I am a Customer
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole('PROVIDER')}
-              className={`py-2.5 rounded-lg transition ${
-                role === 'PROVIDER' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              I am a Service Provider
-            </button>
+          <div className="rounded-xl bg-indigo-50 px-4 py-3 text-center text-sm font-bold text-indigo-700">
+            {role === 'PROVIDER' ? 'Create a Service Provider Account' : 'Create a Customer Account'}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -217,7 +197,7 @@ export default function RegisterPage() {
 
           <div className="text-center text-xs text-slate-500">
             Already registered?{' '}
-            <Link to={`/login?role=${role.toLowerCase()}`} className="font-bold text-indigo-600 hover:underline">
+            <Link to={role === 'PROVIDER' ? '/provider/login' : '/customer/login'} className="font-bold text-indigo-600 hover:underline">
               Log In
             </Link>
           </div>

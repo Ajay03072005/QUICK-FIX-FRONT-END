@@ -14,11 +14,6 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem('quickfix_token') || '');
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(localStorage.getItem('quickfix_user') && localStorage.getItem('quickfix_token')));
 
-  const switchRole = (newRole) => {
-    setUserRole(newRole);
-    localStorage.setItem('quickfix_role', newRole);
-  };
-
   const login = (role, userData, authToken) => {
     const nextToken = authToken || token || 'session-token';
     setUserRole(role);
@@ -40,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ userRole, user, token, isAuthenticated, switchRole, login, logout }}>
+    <AuthContext.Provider value={{ userRole, user, token, isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
