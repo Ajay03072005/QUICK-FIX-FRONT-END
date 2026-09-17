@@ -23,7 +23,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const data = await authApi.login({ email, password, role });
-      login(data.role, data.user);
+      login(data.role, data.user, data.token);
       showToast(`Logged in successfully as ${data.role}`, 'success');
       if (data.role === 'PROVIDER') {
         navigate('/provider/dashboard');
@@ -37,17 +37,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickDemoLogin = (demoRole) => {
-    setLoading(true);
-    authApi.login({ email: `${demoRole.toLowerCase()}@example.com`, password: 'password', role: demoRole }).then(data => {
-      login(data.role, data.user);
-      showToast(`Demo Logged in as ${demoRole}`, 'success');
-      if (demoRole === 'PROVIDER') {
-        navigate('/provider/dashboard');
-      } else {
-        navigate('/customer/dashboard');
-      }
-    });
+  const handleQuickDemoLogin = () => {
+    showToast('Demo login is disabled. Use a real account to sign in.', 'error');
   };
 
   return (
@@ -136,25 +127,10 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Quick Demo Buttons */}
-          <div className="pt-4 border-t border-slate-100 space-y-2">
-            <span className="block text-[11px] font-bold text-slate-400 text-center uppercase tracking-wider">
-              Instant Demo Access
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => handleQuickDemoLogin('CUSTOMER')}
-                className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
-              >
-                Demo Customer
-              </button>
-              <button
-                onClick={() => handleQuickDemoLogin('PROVIDER')}
-                className="py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition"
-              >
-                Demo Provider
-              </button>
-            </div>
+          <div className="pt-4 border-t border-slate-100">
+            <p className="text-[11px] font-bold text-slate-400 text-center uppercase tracking-wider">
+              Use your registered account credentials.
+            </p>
           </div>
 
           <div className="text-center text-xs text-slate-500">

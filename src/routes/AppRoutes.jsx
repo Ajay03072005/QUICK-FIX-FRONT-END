@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 // Public Pages
 import LandingPage from '../pages/public/LandingPage';
@@ -35,6 +36,20 @@ import ProviderServicesPage from '../pages/provider/ProviderServicesPage';
 import ProviderAvailabilityPage from '../pages/provider/ProviderAvailabilityPage';
 import ProviderNotificationsPage from '../pages/provider/ProviderNotificationsPage';
 
+function ProtectedRoute({ children, role }) {
+  const { isAuthenticated, userRole } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role && userRole !== role) {
+    return <Navigate to={role === 'CUSTOMER' ? '/customer/dashboard' : '/provider/dashboard'} replace />;
+  }
+
+  return children;
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -51,30 +66,30 @@ export default function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* Customer Routes */}
-      <Route path="/customer/dashboard" element={<CustomerDashboard />} />
-      <Route path="/customer/find-service" element={<ServicesPage />} />
-      <Route path="/customer/select-address" element={<SelectAddressPage />} />
-      <Route path="/customer/provider-suggestions" element={<FindNearbyPage />} />
-      <Route path="/customer/provider-selection" element={<ProviderSelectionPage />} />
-      <Route path="/customer/booking-confirmation" element={<BookingConfirmationPage />} />
-      <Route path="/customer/bookings" element={<MyBookingsPage />} />
-      <Route path="/customer/bookings/:uniqueId" element={<BookingTrackingPage />} />
-      <Route path="/customer/bookings/:uniqueId/track" element={<BookingTrackingPage />} />
-      <Route path="/customer/profile" element={<CustomerProfilePage />} />
-      <Route path="/customer/addresses" element={<SavedAddressesPage />} />
-      <Route path="/customer/notifications" element={<CustomerNotificationsPage />} />
-      <Route path="/customer/reviews" element={<ReviewsPage />} />
+      <Route path="/customer/dashboard" element={<ProtectedRoute role="CUSTOMER"><CustomerDashboard /></ProtectedRoute>} />
+      <Route path="/customer/find-service" element={<ProtectedRoute role="CUSTOMER"><ServicesPage /></ProtectedRoute>} />
+      <Route path="/customer/select-address" element={<ProtectedRoute role="CUSTOMER"><SelectAddressPage /></ProtectedRoute>} />
+      <Route path="/customer/provider-suggestions" element={<ProtectedRoute role="CUSTOMER"><FindNearbyPage /></ProtectedRoute>} />
+      <Route path="/customer/provider-selection" element={<ProtectedRoute role="CUSTOMER"><ProviderSelectionPage /></ProtectedRoute>} />
+      <Route path="/customer/booking-confirmation" element={<ProtectedRoute role="CUSTOMER"><BookingConfirmationPage /></ProtectedRoute>} />
+      <Route path="/customer/bookings" element={<ProtectedRoute role="CUSTOMER"><MyBookingsPage /></ProtectedRoute>} />
+      <Route path="/customer/bookings/:uniqueId" element={<ProtectedRoute role="CUSTOMER"><BookingTrackingPage /></ProtectedRoute>} />
+      <Route path="/customer/bookings/:uniqueId/track" element={<ProtectedRoute role="CUSTOMER"><BookingTrackingPage /></ProtectedRoute>} />
+      <Route path="/customer/profile" element={<ProtectedRoute role="CUSTOMER"><CustomerProfilePage /></ProtectedRoute>} />
+      <Route path="/customer/addresses" element={<ProtectedRoute role="CUSTOMER"><SavedAddressesPage /></ProtectedRoute>} />
+      <Route path="/customer/notifications" element={<ProtectedRoute role="CUSTOMER"><CustomerNotificationsPage /></ProtectedRoute>} />
+      <Route path="/customer/reviews" element={<ProtectedRoute role="CUSTOMER"><ReviewsPage /></ProtectedRoute>} />
 
       {/* Provider Routes */}
-      <Route path="/provider/dashboard" element={<ProviderDashboard />} />
-      <Route path="/provider/booking-requests" element={<BookingRequestsPage />} />
-      <Route path="/provider/active-service" element={<ActiveServicePage />} />
-      <Route path="/provider/active-service/:uniqueId" element={<ActiveServicePage />} />
-      <Route path="/provider/history" element={<ServiceHistoryPage />} />
-      <Route path="/provider/profile" element={<ProviderProfilePage />} />
-      <Route path="/provider/services" element={<ProviderServicesPage />} />
-      <Route path="/provider/availability" element={<ProviderAvailabilityPage />} />
-      <Route path="/provider/notifications" element={<ProviderNotificationsPage />} />
+      <Route path="/provider/dashboard" element={<ProtectedRoute role="PROVIDER"><ProviderDashboard /></ProtectedRoute>} />
+      <Route path="/provider/booking-requests" element={<ProtectedRoute role="PROVIDER"><BookingRequestsPage /></ProtectedRoute>} />
+      <Route path="/provider/active-service" element={<ProtectedRoute role="PROVIDER"><ActiveServicePage /></ProtectedRoute>} />
+      <Route path="/provider/active-service/:uniqueId" element={<ProtectedRoute role="PROVIDER"><ActiveServicePage /></ProtectedRoute>} />
+      <Route path="/provider/history" element={<ProtectedRoute role="PROVIDER"><ServiceHistoryPage /></ProtectedRoute>} />
+      <Route path="/provider/profile" element={<ProtectedRoute role="PROVIDER"><ProviderProfilePage /></ProtectedRoute>} />
+      <Route path="/provider/services" element={<ProtectedRoute role="PROVIDER"><ProviderServicesPage /></ProtectedRoute>} />
+      <Route path="/provider/availability" element={<ProtectedRoute role="PROVIDER"><ProviderAvailabilityPage /></ProtectedRoute>} />
+      <Route path="/provider/notifications" element={<ProtectedRoute role="PROVIDER"><ProviderNotificationsPage /></ProtectedRoute>} />
 
       {/* Catch-all fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

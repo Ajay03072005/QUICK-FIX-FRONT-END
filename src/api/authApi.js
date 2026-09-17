@@ -14,7 +14,7 @@ export const authApi = {
       const profile = customerProfile.data;
 
       return {
-        token: 'session-token',
+        token: res.data.token || 'customer-session-token',
         role: 'CUSTOMER',
         user: {
           id: res.data.id,
@@ -27,19 +27,24 @@ export const authApi = {
         }
       };
     } else {
-      const providers = await axiosInstance.get('/providers');
-      const provider = providers.data.find(item => item.email === credentials.email);
-      if (!provider) throw new Error('Invalid provider email or password');
+      const res = await axiosInstance.post('/providers/auth/login', {
+        email: credentials.email,
+        password: credentials.password
+      });
+
+      const provider = await axiosInstance.get(`/providers/unique/${res.data.providerUniqueId}`);
+      const providerData = provider.data;
+
       return {
-        token: 'provider-session-token',
+        token: res.data.token || 'provider-session-token',
         role: 'PROVIDER',
         user: {
-          providerUniqueId: provider.uniqueId,
-          id: provider.id,
-          providerName: provider.name,
-          email: provider.email,
-          phone: provider.phoneNumber,
-          availability: provider.availabilityStatus
+          providerUniqueId: res.data.providerUniqueId,
+          id: providerData.id,
+          providerName: providerData.name,
+          email: providerData.email,
+          phone: providerData.phoneNumber,
+          availability: providerData.availabilityStatus
         }
       };
     }
@@ -66,15 +71,9 @@ export const authApi = {
       name: providerData.name,
       phoneNumber: providerData.phone,
       email: providerData.email,
-      providerServices: [],
-      addresses: [],
-      documents: [],
-      contacts: []
+      password: providerData.password
     };
-    const res = await axiosInstance.post('/providers', payload);
-    return {
-      success: true,
-      message: res.data
-    };
+    const res = await axiosInstance.post('/providers/auth/register', payload);
+    return authApi.login({ email: providerData.email, password: providerData.password, role: 'PROVIDER' });
   }
 };

@@ -32,12 +32,12 @@ export default function RegisterPage() {
     try {
       if (role === 'CUSTOMER') {
         const res = await authApi.registerCustomer(formData);
-        login('CUSTOMER', res.user);
+        login('CUSTOMER', res.user, res.token);
         showToast('Customer account created successfully!', 'success');
         navigate('/customer/dashboard');
       } else {
         const res = await authApi.registerProvider(formData);
-        login('PROVIDER', res.provider);
+        login('PROVIDER', res.user, res.token);
         showToast('Provider profile submitted for verification!', 'success');
         navigate('/provider/dashboard');
       }

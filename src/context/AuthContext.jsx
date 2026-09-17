@@ -11,37 +11,36 @@ export const AuthProvider = ({ children }) => {
     }
     return null;
   });
-  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(localStorage.getItem('quickfix_user')));
+  const [token, setToken] = useState(() => localStorage.getItem('quickfix_token') || '');
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(localStorage.getItem('quickfix_user') && localStorage.getItem('quickfix_token')));
 
   const switchRole = (newRole) => {
     setUserRole(newRole);
     localStorage.setItem('quickfix_role', newRole);
-    if (newRole === 'PROVIDER') {
-      logout();
-    } else {
-      logout();
-    }
   };
 
-  const login = (role, userData) => {
+  const login = (role, userData, authToken) => {
+    const nextToken = authToken || token || 'session-token';
     setUserRole(role);
     setUser(userData);
+    setToken(nextToken);
     setIsAuthenticated(true);
     localStorage.setItem('quickfix_role', role);
     localStorage.setItem('quickfix_user', JSON.stringify(userData));
-    localStorage.setItem('quickfix_token', 'session-token');
+    localStorage.setItem('quickfix_token', nextToken);
   };
 
   const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
+    setToken('');
     localStorage.removeItem('quickfix_role');
     localStorage.removeItem('quickfix_user');
     localStorage.removeItem('quickfix_token');
   };
 
   return (
-    <AuthContext.Provider value={{ userRole, user, isAuthenticated, switchRole, login, logout }}>
+    <AuthContext.Provider value={{ userRole, user, token, isAuthenticated, switchRole, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
