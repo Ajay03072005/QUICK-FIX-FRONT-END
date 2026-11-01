@@ -67,6 +67,11 @@ export const bookingApi = {
     return normalizeBooking(res.data);
   },
 
+  markEnRoute: async (bookingUniqueId) => {
+    const res = await axiosInstance.put(`/bookings/${bookingUniqueId}/en-route`);
+    return normalizeBooking(res.data);
+  },
+
   completeBooking: async (bookingUniqueId) => {
     const res = await axiosInstance.put(`/bookings/${bookingUniqueId}/complete`);
     return normalizeBooking(res.data);

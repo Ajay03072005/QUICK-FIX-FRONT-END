@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, MapPin, Star, CheckCircle2, ChevronRight, User, Calendar, Clock, Tag } from 'lucide-react';
+import { ShieldCheck, MapPin, ChevronRight, User, Calendar, Tag, ArrowLeft } from 'lucide-react';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
 import BookingStepper from '../../components/booking/BookingStepper';
 import PriceBreakdown from '../../components/booking/PriceBreakdown';
 import StarRating from '../../components/common/StarRating';
 import { useBooking } from '../../context/BookingContext';
-import { providerApi } from '../../api/providerApi';
 import { bookingApi } from '../../api/bookingApi';
 import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
@@ -17,18 +16,79 @@ export default function ProviderSelectionPage() {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [discoveryError, setDiscoveryError] = useState('');
+  const [searchAttempt, setSearchAttempt] = useState(0);
   const [stepSubState, setStepSubState] = useState('CHOICE'); // 'CHOICE' | 'REVIEW'
 
   const { showToast } = useNotification();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const missingService = !bookingDraft.service?.uniqueId;
+  const missingAddress = !bookingDraft.address?.uniqueId;
 
   useEffect(() => {
-    providerApi.getNearbyProviders().then(data => {
-      setProviders(data);
-      setLoading(false);
-    });
-  }, []);
+    let active = true;
+    let timeoutId;
+    const loadEligibleProviders = async () => {
+      if (missingService || missingAddress || !user?.customerUniqueId) {
+        setDiscoveryError(!user?.customerUniqueId
+          ? 'Sign in to your customer account before choosing a provider.'
+          : missingService
+            ? 'Your selected service is missing. Choose a service to continue.'
+            : 'Your service address is missing. Choose an address and appointment time to continue.');
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        setDiscoveryError('');
+        timeoutId = window.setTimeout(() => {
+          if (active) {
+            setLoading(false);
+            setDiscoveryError('Provider search is taking longer than expected. Please try again.');
+          }
+        }, 12000);
+        const draftBooking = bookingDraft.bookingUniqueId
+          ? { bookingUniqueId: bookingDraft.bookingUniqueId }
+          : await bookingApi.createBooking(user.customerUniqueId, {
+            serviceUniqueId: bookingDraft.service.uniqueId,
+            addressUniqueId: bookingDraft.address.uniqueId,
+            recipientName: user.name,
+            recipientPhone: user.phone,
+            bookingDate: bookingDraft.bookingDate,
+            bookingTime: toBackendTime(bookingDraft.bookingTime)
+          });
+        if (!active) return;
+        updateDraft({ bookingUniqueId: draftBooking.bookingUniqueId });
+        const eligible = await bookingApi.findNearbyProvidersForBooking(draftBooking.bookingUniqueId);
+        if (active) {
+          setProviders(Array.isArray(eligible) ? eligible : []);
+          setDiscoveryError('');
+        }
+      } catch (error) {
+        if (active) setDiscoveryError(error.response?.data?.message || 'Unable to find eligible providers for this service and location. Please try again.');
+      } finally {
+        window.clearTimeout(timeoutId);
+        if (active) setLoading(false);
+      }
+    };
+    loadEligibleProviders();
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [bookingDraft.service?.uniqueId, bookingDraft.address?.uniqueId, bookingDraft.bookingDate, bookingDraft.bookingTime, user?.customerUniqueId, user?.name, user?.phone, updateDraft, searchAttempt]);
+
+  const retryProviderSearch = () => {
+    setSearchAttempt((attempt) => attempt + 1);
+  };
+
+  const recoverFromDiscoveryError = () => {
+    if (!user?.customerUniqueId) navigate('/customer/login');
+    else if (missingService) navigate('/customer/find-service');
+    else if (missingAddress) navigate('/customer/select-address');
+    else retryProviderSearch();
+  };
 
   const handleSelectProvider = (prov) => {
     const distance = calculateDistance(bookingDraft.address, prov);
@@ -67,14 +127,16 @@ export default function ProviderSelectionPage() {
         bookingTime: toBackendTime(bookingDraft.bookingTime)
       };
 
-      const createdBooking = await bookingApi.createBooking(user.customerUniqueId, payload);
+      const createdBooking = bookingDraft.bookingUniqueId
+        ? { bookingUniqueId: bookingDraft.bookingUniqueId }
+        : await bookingApi.createBooking(user.customerUniqueId, payload);
       const result = await bookingApi.selectProviderForBooking(
         createdBooking.bookingUniqueId,
         bookingDraft.provider.providerUniqueId
       );
       showToast('Booking Request Sent!', 'success');
       navigate('/customer/booking-confirmation', { state: { booking: result } });
-    } catch (err) {
+    } catch {
       showToast('Booking failed to submit. Please try again.', 'error');
     } finally {
       setSubmitting(false);
@@ -86,6 +148,14 @@ export default function ProviderSelectionPage() {
       <Header />
 
       <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 space-y-6">
+        <button
+          type="button"
+          onClick={() => stepSubState === 'REVIEW' ? setStepSubState('CHOICE') : navigate(missingService ? '/customer/find-service' : '/customer/select-address')}
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-xs transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {stepSubState === 'REVIEW' ? 'Back to providers' : missingService ? 'Back to services' : 'Back to address & time'}
+        </button>
         <BookingStepper currentStep={stepSubState === 'CHOICE' ? 4 : 5} />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -99,8 +169,12 @@ export default function ProviderSelectionPage() {
                   <span className="text-xs font-semibold text-slate-500">Based on your selected location</span>
                 </div>
 
+                {discoveryError && <div className="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 sm:flex-row sm:items-center sm:justify-between"><p>{discoveryError}</p><button type="button" onClick={recoverFromDiscoveryError} className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-bold text-rose-700 shadow-sm hover:bg-rose-100">{!user?.customerUniqueId ? 'Customer sign in' : missingService ? 'Choose a service' : missingAddress ? 'Choose an address' : 'Try again'}</button></div>}
+                {loading && !discoveryError && <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-6 text-sm font-semibold text-slate-600"><span className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent"/>Finding nearby providers for your address…</div>}
+                {!loading && !discoveryError && providers.length === 0 && (
+                  <p className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">No eligible providers are available for this service and appointment.</p>
+                )}
                 {providers.map((prov) => {
-                  const isSelected = bookingDraft.provider?.providerUniqueId === prov.providerUniqueId;
                   const providerDistance = calculateDistance(bookingDraft.address, prov);
                   const providerTotal = (bookingDraft.service?.startingPrice || 0) + calculateDistanceCharge(providerDistance);
 
@@ -157,7 +231,7 @@ export default function ProviderSelectionPage() {
                               onClick={() => handleSelectProvider(prov)}
                               className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-600/20 transition flex items-center gap-1"
                             >
-                              Select Provider <ChevronRight className="w-4 h-4" />
+                              Select & Continue <ChevronRight className="w-4 h-4" />
                             </button>
                           </div>
                         </div>

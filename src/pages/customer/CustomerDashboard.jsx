@@ -12,7 +12,6 @@ import { customerApi } from '../../api/customerApi';
 
 export default function CustomerDashboard() {
   const { user } = useAuth();
-  const [activeBooking, setActiveBooking] = useState(null);
   const [recentBookings, setRecentBookings] = useState([]);
   const [services, setServices] = useState([]);
   const [addressCount, setAddressCount] = useState(0);
@@ -24,11 +23,17 @@ export default function CustomerDashboard() {
     if (!user?.customerUniqueId) return;
     bookingApi.getCustomerBookings(user.customerUniqueId).then(bookings => {
       setRecentBookings(bookings);
-      const active = bookings.find(b => b.status !== 'COMPLETED' && b.status !== 'CUSTOMER_CANCELLED');
-      setActiveBooking(active || bookings[0]);
-    });
+    }).catch(() => setRecentBookings([]));
     customerApi.getSavedAddresses(user.customerUniqueId).then(addresses => setAddressCount(addresses.length));
-  }, [user]);
+  }, [user?.customerUniqueId]);
+
+  const activeStatuses = ['PENDING', 'PROVIDER_SELECTED', 'WAITING_FOR_PROVIDER', 'WAITING_ACCEPTANCE', 'PROVIDER_ACCEPTED', 'CONFIRMED', 'ACCEPTED', 'PROVIDER_EN_ROUTE', 'IN_PROGRESS', 'SERVICE_STARTED'];
+  const activeBookings = recentBookings.filter((booking) => activeStatuses.includes(String(booking.status || '').toUpperCase()));
+  const activeBooking = [...activeBookings].sort((a, b) => {
+    const first = new Date(`${a.bookingDate || ''}T${a.bookingTime || '23:59:59'}`).getTime();
+    const second = new Date(`${b.bookingDate || ''}T${b.bookingTime || '23:59:59'}`).getTime();
+    return first - second;
+  })[0] || null;
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -75,7 +80,7 @@ export default function CustomerDashboard() {
           <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex items-center justify-between">
             <div>
               <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Active Bookings</span>
-              <span className="text-3xl font-extrabold text-indigo-600">{activeBooking ? 1 : 0}</span>
+              <span className="text-3xl font-extrabold text-indigo-600">{activeBookings.length}</span>
             </div>
           </div>
 
@@ -96,12 +101,20 @@ export default function CustomerDashboard() {
           </div>
         </div>
 
+        <Link to="/customer/profile" className="flex flex-col gap-3 rounded-2xl border border-indigo-100 bg-white p-5 shadow-xs transition hover:border-indigo-200 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-extrabold text-slate-900">Your profile & account</h2>
+            <p className="mt-1 text-sm text-slate-500">View your details, service activity, saved locations and preferences.</p>
+          </div>
+          <span className="shrink-0 rounded-xl bg-indigo-50 px-4 py-2.5 text-sm font-bold text-indigo-700">Open profile <ArrowRight className="ml-1 inline h-4 w-4" /></span>
+        </Link>
+
         {/* Active Booking Widget */}
         {activeBooking && (
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-indigo-100 ring-1 ring-indigo-500/10 shadow-md space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Active Service</span>
+                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Upcoming Booking</span>
                 <h2 className="text-xl font-extrabold text-slate-900 mt-0.5">{activeBooking.serviceName || 'Home Service'}</h2>
               </div>
               <StatusBadge status={activeBooking.status} />
@@ -122,6 +135,16 @@ export default function CustomerDashboard() {
                 </Link>
               </div>
             </div>
+          </div>
+        )}
+        {!activeBooking && (
+          <div className="flex flex-col gap-4 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">No active bookings</p>
+              <h2 className="mt-1 text-lg font-extrabold text-slate-900">Ready to book a home service?</h2>
+              <p className="mt-1 text-sm text-slate-500">Your active and upcoming appointments will appear here.</p>
+            </div>
+            <Link to="/services" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-700">Browse services <ArrowRight className="h-4 w-4" /></Link>
           </div>
         )}
 

@@ -8,23 +8,31 @@ export default function StatusBadge({ status }) {
 
   switch (status) {
     case 'BOOKING_CREATED':
+    case 'PENDING':
       bg = 'bg-blue-50 text-blue-700 border-blue-200';
-      label = 'Booking Created';
+      label = status === 'PENDING' ? 'Pending' : 'Booking Created';
       break;
     case 'PROVIDER_SELECTED':
       bg = 'bg-indigo-50 text-indigo-700 border-indigo-200';
       label = 'Provider Selected';
       break;
     case 'WAITING_ACCEPTANCE':
+    case 'WAITING_FOR_PROVIDER':
       bg = 'bg-amber-50 text-amber-700 border-amber-200';
       icon = <Clock className="w-3.5 h-3.5 animate-pulse" />;
       label = 'Waiting for Provider Response';
       break;
     case 'PROVIDER_ACCEPTED':
     case 'ACCEPTED':
+    case 'CONFIRMED':
       bg = 'bg-emerald-50 text-emerald-700 border-emerald-200';
       icon = <CheckCircle2 className="w-3.5 h-3.5" />;
-      label = 'Provider Accepted';
+      label = status === 'CONFIRMED' ? 'Confirmed' : 'Provider Accepted';
+      break;
+    case 'PROVIDER_EN_ROUTE':
+      bg = 'bg-cyan-50 text-cyan-700 border-cyan-200';
+      icon = <PlayCircle className="w-3.5 h-3.5" />;
+      label = 'Provider En Route';
       break;
     case 'IN_PROGRESS':
     case 'SERVICE_STARTED':
@@ -39,9 +47,12 @@ export default function StatusBadge({ status }) {
       break;
     case 'CANCELLED':
     case 'REJECTED':
+    case 'CUSTOMER_CANCELLED':
+    case 'PROVIDER_CANCELLED':
+    case 'PROVIDER_REJECTED':
       bg = 'bg-rose-50 text-rose-700 border-rose-200';
       icon = <XCircle className="w-3.5 h-3.5" />;
-      label = 'Cancelled';
+      label = status === 'CUSTOMER_CANCELLED' ? 'Cancelled by You' : status === 'PROVIDER_REJECTED' ? 'Request Declined' : 'Cancelled';
       break;
     default:
       break;

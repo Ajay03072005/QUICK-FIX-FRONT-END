@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Calendar, MapPin, ChevronRight, Filter } from 'lucide-react';
+import { Calendar, MapPin, ChevronRight, CreditCard, FileText } from 'lucide-react';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
 import StatusBadge from '../../components/common/StatusBadge';
+import PaymentStatusBadge from '../../components/payment/PaymentStatusBadge';
 import EmptyState from '../../components/common/EmptyState';
 import { bookingApi } from '../../api/bookingApi';
 import { useAuth } from '../../context/AuthContext';
@@ -13,25 +14,39 @@ export default function MyBookingsPage() {
   const [activeTab, setActiveTab] = useState('ALL'); // ALL, PENDING, ACTIVE, COMPLETED, CANCELLED
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    if (user?.customerUniqueId) bookingApi.getCustomerBookings(user.customerUniqueId).then(data => {
-      setBookings(data);
+    if (!user?.customerUniqueId) {
+      setBookings([]);
       setLoading(false);
-    });
-  }, []);
+      return;
+    }
+    let mounted = true;
+    setLoading(true);
+    setLoadError(false);
+    bookingApi.getCustomerBookings(user.customerUniqueId)
+      .then((data) => { if (mounted) setBookings(data); })
+      .catch(() => { if (mounted) setLoadError(true); })
+      .finally(() => { if (mounted) setLoading(false); });
+    return () => { mounted = false; };
+  }, [user?.customerUniqueId]);
 
   const tabs = [
     { key: 'ALL', label: 'All Bookings' },
-    { key: 'WAITING_ACCEPTANCE', label: 'Pending' },
-    { key: 'PROVIDER_ACCEPTED', label: 'Active / Upcoming' },
+    { key: 'PENDING', label: 'Pending' },
+    { key: 'ACTIVE', label: 'Active / Upcoming' },
     { key: 'COMPLETED', label: 'Completed' },
     { key: 'CANCELLED', label: 'Cancelled' }
   ];
 
   const filteredBookings = bookings.filter(b => {
     if (activeTab === 'ALL') return true;
-    return b.status === activeTab;
+    const status = String(b.status || '').toUpperCase();
+    if (activeTab === 'PENDING') return ['PENDING', 'PROVIDER_SELECTED', 'WAITING_FOR_PROVIDER', 'WAITING_ACCEPTANCE'].includes(status);
+    if (activeTab === 'ACTIVE') return ['PROVIDER_ACCEPTED', 'CONFIRMED', 'ACCEPTED', 'PROVIDER_EN_ROUTE', 'IN_PROGRESS', 'SERVICE_STARTED'].includes(status);
+    if (activeTab === 'CANCELLED') return ['CUSTOMER_CANCELLED', 'PROVIDER_CANCELLED', 'CANCELLED', 'PROVIDER_REJECTED', 'REJECTED'].includes(status);
+    return status === activeTab;
   });
 
   return (
@@ -64,6 +79,8 @@ export default function MyBookingsPage() {
         {/* Bookings List */}
         {loading ? (
           <div className="py-12 text-center text-sm text-slate-500">Loading bookings...</div>
+        ) : loadError ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center text-sm text-rose-700">We couldn’t load your bookings. Please refresh and try again.</div>
         ) : filteredBookings.length === 0 ? (
           <EmptyState
             title="No Bookings Found"
@@ -79,9 +96,12 @@ export default function MyBookingsPage() {
                 className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition space-y-4 flex flex-col justify-between"
               >
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="text-xs font-bold text-indigo-600">{bkg.bookingUniqueId}</span>
-                    <StatusBadge status={bkg.status} />
+                    <div className="flex items-center gap-1.5">
+                      <StatusBadge status={bkg.status} />
+                      {(bkg.status === 'COMPLETED' || ['PAID', 'SUCCESS', 'FAILED', 'REFUND_PENDING', 'REFUNDED', 'PARTIALLY_REFUNDED'].includes(bkg.paymentStatus)) && <PaymentStatusBadge status={bkg.paymentStatus} />}
+                    </div>
                   </div>
 
                   <h3 className="font-extrabold text-slate-900 text-lg">{bkg.serviceName}</h3>
@@ -99,18 +119,36 @@ export default function MyBookingsPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
                   <div>
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase">Estimated Total</span>
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase">Total Payable</span>
                     <span className="text-lg font-extrabold text-indigo-600">₹{bkg.totalPrice}</span>
                   </div>
 
-                  <Link
-                    to={`/customer/bookings/${bkg.bookingUniqueId}/track`}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1 shadow-xs"
-                  >
-                    View Details <ChevronRight className="w-4 h-4" />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    {bkg.status === 'COMPLETED' && bkg.paymentStatus !== 'PAID' && bkg.paymentStatus !== 'SUCCESS' ? (
+                      <Link
+                        to={`/customer/payment/${bkg.bookingUniqueId}`}
+                        className="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1 shadow-xs"
+                      >
+                        <CreditCard className="w-3.5 h-3.5" /> Pay Now
+                      </Link>
+                    ) : (bkg.paymentStatus === 'PAID' || bkg.paymentStatus === 'SUCCESS') ? (
+                      <Link
+                        to={`/customer/receipt/${bkg.bookingUniqueId}`}
+                        className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs rounded-xl transition flex items-center gap-1"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-emerald-600" /> Receipt
+                      </Link>
+                    ) : null}
+
+                    <Link
+                      to={`/customer/bookings/${bkg.bookingUniqueId}/track`}
+                      className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1"
+                    >
+                      Details <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

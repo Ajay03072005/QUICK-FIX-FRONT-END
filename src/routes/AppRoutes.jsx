@@ -25,7 +25,11 @@ import SavedAddressesPage from '../pages/customer/SavedAddressesPage';
 import CustomerProfilePage from '../pages/customer/CustomerProfilePage';
 import CustomerNotificationsPage from '../pages/customer/CustomerNotificationsPage';
 import ReviewsPage from '../pages/customer/ReviewsPage';
+import BookingPaymentPage from '../pages/customer/BookingPaymentPage';
+import PaymentResultPage from '../pages/customer/PaymentResultPage';
+import PaymentReceiptPage from '../pages/customer/PaymentReceiptPage';
 import AdminPortalPage from '../pages/admin/AdminPortalPage';
+import SupportPortalPage from '../pages/support/SupportPortalPage';
 
 // Provider Pages
 import ProviderDashboard from '../pages/provider/ProviderDashboard';
@@ -44,8 +48,16 @@ function ProtectedRoute({ children, role }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (role && userRole !== role) {
-    return <Navigate to={role === 'CUSTOMER' ? '/customer/dashboard' : '/provider/dashboard'} replace />;
+  if (role) {
+    const allowedRoles = Array.isArray(role) ? role : [role];
+    if (!allowedRoles.includes(userRole)) {
+      const moduleLogin = allowedRoles.includes('CUSTOMER')
+        ? '/customer/login'
+        : allowedRoles.includes('PROVIDER')
+          ? '/provider/login'
+          : '/login';
+      return <Navigate to={moduleLogin} replace />;
+    }
   }
 
   return children;
@@ -68,7 +80,8 @@ export default function AppRoutes() {
       <Route path="/customer/register" element={<RegisterPage />} />
       <Route path="/provider/login" element={<LoginPage />} />
       <Route path="/provider/register" element={<RegisterPage />} />
-      <Route path="/admin" element={<AdminPortalPage />} />
+      <Route path="/admin" element={<ProtectedRoute role={['ADMIN']}><AdminPortalPage /></ProtectedRoute>} />
+      <Route path="/support" element={<ProtectedRoute role={['SUPPORT', 'ADMIN']}><SupportPortalPage /></ProtectedRoute>} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* Customer Routes */}
@@ -85,6 +98,9 @@ export default function AppRoutes() {
       <Route path="/customer/addresses" element={<ProtectedRoute role="CUSTOMER"><SavedAddressesPage /></ProtectedRoute>} />
       <Route path="/customer/notifications" element={<ProtectedRoute role="CUSTOMER"><CustomerNotificationsPage /></ProtectedRoute>} />
       <Route path="/customer/reviews" element={<ProtectedRoute role="CUSTOMER"><ReviewsPage /></ProtectedRoute>} />
+      <Route path="/customer/payment/:uniqueId" element={<ProtectedRoute role="CUSTOMER"><BookingPaymentPage /></ProtectedRoute>} />
+      <Route path="/customer/payment/result/:paymentRef" element={<ProtectedRoute role="CUSTOMER"><PaymentResultPage /></ProtectedRoute>} />
+      <Route path="/customer/receipt/:paymentRef" element={<ProtectedRoute role="CUSTOMER"><PaymentReceiptPage /></ProtectedRoute>} />
 
       {/* Provider Routes */}
       <Route path="/provider/dashboard" element={<ProtectedRoute role="PROVIDER"><ProviderDashboard /></ProtectedRoute>} />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Plus, Calendar, Clock, ChevronRight, CheckCircle2, Home, Briefcase, Building } from 'lucide-react';
+import { MapPin, Plus, Calendar, Clock, ChevronRight, CheckCircle2, Home, Briefcase, Building, Pencil, X, Save } from 'lucide-react';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
 import BookingStepper from '../../components/booking/BookingStepper';
@@ -8,16 +8,20 @@ import PriceBreakdown from '../../components/booking/PriceBreakdown';
 import { useBooking } from '../../context/BookingContext';
 import { customerApi } from '../../api/customerApi';
 import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
 
 export default function SelectAddressPage() {
   const { user } = useAuth();
+  const { showToast } = useNotification();
   const { bookingDraft, updateDraft } = useBooking();
   const [addresses, setAddresses] = useState([]);
   const [selectedAddrId, setSelectedAddrId] = useState(bookingDraft.address?.id || 'ADDR-01');
   const [date, setDate] = useState(bookingDraft.bookingDate || new Date(Date.now() + 86400000).toISOString().split('T')[0]);
   const [timeSlot, setTimeSlot] = useState(bookingDraft.bookingTime || '10:30 AM');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newAddr, setNewAddr] = useState({ label: 'Home', addressLine1: '', addressLine2: '', city: 'Coimbatore', postalCode: '641002' });
+  const [newAddr, setNewAddr] = useState({ label: 'HOME', addressLine1: '', addressLine2: '', city: 'Coimbatore', state: 'Tamil Nadu', postalCode: '641002' });
+  const [editingAddress, setEditingAddress] = useState(null);
+  const [savingAddress, setSavingAddress] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,7 +35,8 @@ export default function SelectAddressPage() {
 
   const handleSelectAddress = (addr) => {
     setSelectedAddrId(addr.id);
-    updateDraft({ address: addr });
+    const changedAddress = bookingDraft.address?.id !== addr.id;
+    updateDraft({ address: addr, ...(changedAddress ? { bookingUniqueId: undefined, provider: null } : {}) });
   };
 
   const handleAddNewAddress = (e) => {
@@ -41,6 +46,40 @@ export default function SelectAddressPage() {
       handleSelectAddress(created);
       setShowAddModal(false);
     });
+  };
+
+  const startEditingAddress = (event, address) => {
+    event.stopPropagation();
+    setEditingAddress(address);
+    setNewAddr({
+      label: address.type || address.label || 'HOME',
+      addressLine1: address.addressLine1 || '',
+      addressLine2: address.addressLine2 || '',
+      city: address.city || '',
+      state: address.state || '',
+      postalCode: address.postalCode || '',
+      country: address.country || 'India',
+      latitude: address.latitude,
+      longitude: address.longitude,
+      isDefault: address.isDefault
+    });
+  };
+
+  const handleUpdateAddress = async (event) => {
+    event.preventDefault();
+    if (!user?.customerUniqueId || !editingAddress?.uniqueId) return;
+    setSavingAddress(true);
+    try {
+      const updated = await customerApi.updateSavedAddress(user.customerUniqueId, editingAddress.uniqueId, newAddr);
+      setAddresses((current) => current.map((address) => address.id === editingAddress.id ? updated : address));
+      if (bookingDraft.address?.id === editingAddress.id) updateDraft({ address: updated });
+      setEditingAddress(null);
+      showToast('Address updated successfully.', 'success');
+    } catch {
+      showToast('Could not update this address. Please try again.', 'error');
+    } finally {
+      setSavingAddress(false);
+    }
   };
 
   const timeSlots = [
@@ -53,10 +92,14 @@ export default function SelectAddressPage() {
 
   const handleContinue = () => {
     const chosenAddr = addresses.find(a => a.id === selectedAddrId) || addresses[0];
+    const appointmentChanged = bookingDraft.address?.id !== chosenAddr?.id
+      || bookingDraft.bookingDate !== date
+      || bookingDraft.bookingTime !== timeSlot;
     updateDraft({
       address: chosenAddr,
       bookingDate: date,
-      bookingTime: timeSlot
+      bookingTime: timeSlot,
+      ...(appointmentChanged ? { bookingUniqueId: undefined, provider: null } : {})
     });
     navigate('/customer/provider-selection');
   };
@@ -107,7 +150,10 @@ export default function SelectAddressPage() {
                           {addr.type === 'OTHER' && <Building className="w-4 h-4 text-indigo-600" />}
                           {addr.label}
                         </span>
-                        {isSelected && <CheckCircle2 className="w-4 h-4 text-indigo-600" />}
+                        <span className="flex items-center gap-2">
+                          {isSelected && <CheckCircle2 className="w-4 h-4 text-indigo-600" />}
+                          <button type="button" onClick={(event) => startEditingAddress(event, addr)} aria-label={`Edit ${addr.label} address`} className="rounded-lg p-1.5 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600"><Pencil className="h-4 w-4"/></button>
+                        </span>
                       </div>
                       <p className="text-xs text-slate-600 leading-relaxed font-medium">
                         {addr.addressLine1}, {addr.addressLine2}, {addr.city} - {addr.postalCode}
@@ -181,20 +227,14 @@ export default function SelectAddressPage() {
       </main>
 
       {/* Add New Address Modal */}
-      {showAddModal && (
+      {(showAddModal || editingAddress) && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-slate-900">Add New Service Address</h3>
-            <form onSubmit={handleAddNewAddress} className="space-y-4 text-xs">
+            <div className="flex items-center justify-between"><h3 className="text-lg font-bold text-slate-900">{editingAddress ? 'Edit Service Address' : 'Add New Service Address'}</h3><button type="button" onClick={() => { setShowAddModal(false); setEditingAddress(null); }} aria-label="Close address editor" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5"/></button></div>
+            <form onSubmit={editingAddress ? handleUpdateAddress : handleAddNewAddress} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 uppercase mb-1">Label (e.g. Home, Work, Gym)</label>
-                <input
-                  type="text"
-                  required
-                  value={newAddr.label}
-                  onChange={(e) => setNewAddr({ ...newAddr, label: e.target.value })}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                />
+                <label className="block font-bold text-slate-700 uppercase mb-1">Address type</label>
+                <select required value={newAddr.label} onChange={(e) => setNewAddr({ ...newAddr, label: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs"><option value="HOME">Home</option><option value="OFFICE">Office</option><option value="OTHER">Other</option></select>
               </div>
               <div>
                 <label className="block font-bold text-slate-700 uppercase mb-1">Address Line 1</label>
@@ -237,20 +277,21 @@ export default function SelectAddressPage() {
                   />
                 </div>
               </div>
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">State</label>
+                <input type="text" value={newAddr.state || ''} onChange={(e) => setNewAddr({ ...newAddr, state: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs" />
+              </div>
 
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => { setShowAddModal(false); setEditingAddress(null); }}
                   className="flex-1 py-3 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md"
-                >
-                  Save Address
+                <button type="submit" disabled={savingAddress} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md disabled:opacity-60">
+                  {editingAddress ? <><Save className="mr-1 inline h-4 w-4"/>{savingAddress ? 'Saving…' : 'Save Changes'}</> : 'Save Address'}
                 </button>
               </div>
             </form>

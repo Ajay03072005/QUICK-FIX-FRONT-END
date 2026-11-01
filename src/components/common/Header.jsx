@@ -5,15 +5,19 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { userRole, user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isCustomer = userRole === 'CUSTOMER';
+  // Public pages and /customer routes belong to the customer module. Keep its
+  // navigation customer-focused even when a provider session is still active.
+  const isCustomer = !location.pathname.startsWith('/provider');
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Services', path: '/services' },
     { name: 'Find Nearby', path: '/find-nearby' },
+    ...(isAuthenticated && isCustomer ? [{ name: 'My Profile', path: '/customer/profile' }] : []),
+    ...(isAuthenticated && !isCustomer ? [{ name: 'Business Profile', path: '/provider/profile' }] : []),
     { name: 'How It Works', path: '/#how-it-works' },
     { name: 'Become a Provider', path: '/provider/register' },
   ];

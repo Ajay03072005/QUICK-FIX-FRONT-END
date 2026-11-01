@@ -32,7 +32,7 @@ export default function ServiceDetailsPage() {
   }
 
   const handleBookService = () => {
-    updateDraft({ service, serviceCharge: service.startingPrice });
+    updateDraft({ service, serviceCharge: service.startingPrice, bookingUniqueId: undefined, provider: null, distanceKm: undefined, distanceCharge: undefined });
     navigate('/customer/select-address');
   };
 

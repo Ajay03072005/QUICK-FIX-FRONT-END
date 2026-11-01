@@ -34,8 +34,16 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('quickfix_token');
   };
 
+  const updateUser = (updates) => {
+    setUser((currentUser) => {
+      const nextUser = { ...currentUser, ...updates };
+      localStorage.setItem('quickfix_user', JSON.stringify(nextUser));
+      return nextUser;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ userRole, user, token, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ userRole, user, token, isAuthenticated, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

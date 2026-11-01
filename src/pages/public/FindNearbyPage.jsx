@@ -1,55 +1,100 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { MapPin, Search, Filter, Star, ShieldCheck, CheckCircle2, List, Map as MapIcon, ChevronRight } from 'lucide-react';
+import { MapPin, CheckCircle2, List, Map as MapIcon, ChevronRight, LocateFixed } from 'lucide-react';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
 import LeafletMapComponent from '../../components/map/LeafletMapComponent';
 import StarRating from '../../components/common/StarRating';
 import { CardSkeleton } from '../../components/common/SkeletonLoader';
 import { providerApi } from '../../api/providerApi';
+import { serviceApi } from '../../api/serviceApi';
 import { useBooking } from '../../context/BookingContext';
+import { useNotification } from '../../context/NotificationContext';
 
 export default function FindNearbyPage() {
   const [searchParams] = useSearchParams();
-  const initialCategory = searchParams.get('category') || 'AC Repair';
+  const requestedService = searchParams.get('service') || searchParams.get('category') || 'AC_REPAIR';
+  const requestedServiceType = normalizeServiceType(requestedService);
   const initialLocation = searchParams.get('location') || 'Coimbatore, Tamil Nadu';
 
+  const { updateDraft, bookingDraft } = useBooking();
+  const { showToast } = useNotification();
+  const navigate = useNavigate();
   const [providers, setProviders] = useState([]);
+  const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [locationError, setLocationError] = useState('');
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [mobileViewTab, setMobileViewTab] = useState('LIST'); // 'LIST' | 'MAP'
   const [filterAvailability, setFilterAvailability] = useState('ALL');
 
-  const { updateDraft } = useBooking();
-  const navigate = useNavigate();
+  const [locationCenter, setLocationCenter] = useState(() => {
+    const queryLat = Number(searchParams.get('lat'));
+    const queryLng = Number(searchParams.get('lng'));
+    const address = bookingDraft.address;
+    const hasQueryCoordinates = searchParams.has('lat') && searchParams.has('lng') && Number.isFinite(queryLat) && Number.isFinite(queryLng);
+    const hasAddressCoordinates = address?.latitude != null && address?.longitude != null
+      && Number.isFinite(Number(address.latitude)) && Number.isFinite(Number(address.longitude));
+    if (hasQueryCoordinates) return { lat: queryLat, lng: queryLng, name: initialLocation, resolved: true };
+    if (hasAddressCoordinates) return { lat: Number(address.latitude), lng: Number(address.longitude), name: address.label || initialLocation, resolved: true };
+    if (/coimbatore/i.test(initialLocation)) return { lat: 11.0125, lng: 76.9515, name: initialLocation, resolved: true };
+    return { lat: 11.0125, lng: 76.9515, name: initialLocation, resolved: false };
+  });
 
   useEffect(() => {
-    fetchProviders();
-  }, [initialCategory]);
+    serviceApi.getAllServices().then(setCatalog).catch(() => setCatalog([]));
+  }, []);
 
-  const fetchProviders = async () => {
-    setLoading(true);
-    try {
-      const data = await providerApi.getNearbyProviders();
-      setProviders(data);
-      if (data.length > 0) {
-        // Auto-select recommended provider or first provider
-        const recommended = data.find(p => p.recommended) || data[0];
-        setSelectedProvider(recommended);
-      }
-    } catch (err) {
-      console.error('Error loading providers', err);
-    } finally {
+  useEffect(() => {
+    let active = true;
+    if (!locationCenter.resolved) {
+      setProviders([]);
+      setSelectedProvider(null);
       setLoading(false);
+      return () => { active = false; };
     }
+    setLoading(true);
+    setLoadError('');
+    providerApi.getNearbyProviders({ latitude: locationCenter.lat, longitude: locationCenter.lng, radiusKm: 25, serviceType: requestedServiceType })
+      .then((data) => {
+        if (!active) return;
+        setProviders(data);
+        setSelectedProvider(data[0] || null);
+      })
+      .catch(() => { if (active) setLoadError('Could not load nearby providers. Check the connection and try again.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [locationCenter, requestedServiceType]);
+
+  const selectedService = catalog.find((service) => normalizeServiceType(service.categoryId) === requestedServiceType);
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Your browser does not support current location.');
+      return;
+    }
+    setLocationError('');
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => setLocationCenter({ lat: coords.latitude, lng: coords.longitude, name: 'your current location', resolved: true }),
+      () => setLocationError('Location access was blocked. Allow location access or search Coimbatore.'),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
   };
 
   const handleSelectProviderForBooking = (prov) => {
+    if (!selectedService) {
+      showToast('Choose a service before selecting a provider.', 'error');
+      navigate('/customer/find-service');
+      return;
+    }
+    const distanceCharge = calculateDistanceCharge(prov.distance);
     updateDraft({
+      service: selectedService,
       provider: prov,
       distanceKm: prov.distance,
-      serviceCharge: prov.startingPrice,
-      distanceCharge: Math.round(prov.distance * 50)
+      serviceCharge: selectedService.startingPrice,
+      distanceCharge
     });
     navigate('/customer/select-address');
   };
@@ -75,8 +120,9 @@ export default function FindNearbyPage() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 px-3 py-2 bg-slate-800 rounded-xl border border-slate-700 text-xs text-slate-300">
                 <MapPin className="w-4 h-4 text-indigo-400" />
-                <span>Near {initialLocation}</span>
+                <span>Near {locationCenter.name || initialLocation}</span>
               </div>
+              <button onClick={useCurrentLocation} className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-300 hover:bg-slate-700"><LocateFixed className="h-4 w-4"/>Use my location</button>
               <button
                 onClick={() => setFilterAvailability(filterAvailability === 'NOW' ? 'ALL' : 'NOW')}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
@@ -123,7 +169,7 @@ export default function FindNearbyPage() {
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                 Showing {filteredProviders.length} Nearby Providers
               </span>
-              <span className="text-xs font-semibold text-slate-500">Sorted by distance & rating</span>
+              <span className="text-xs font-semibold text-slate-500">Within 25 km · nearest first</span>
             </div>
 
             {loading ? (
@@ -135,7 +181,7 @@ export default function FindNearbyPage() {
             ) : filteredProviders.length === 0 ? (
               <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center space-y-3">
                 <p className="text-sm font-bold text-slate-700">No nearby providers available right now.</p>
-                <p className="text-xs text-slate-500">Try turning off "Available Now Only" or expanding your location radius.</p>
+                <p className="text-xs text-slate-500">No providers with a service location were found within 25 km. Try using your current location or another search area.</p>
               </div>
             ) : (
               filteredProviders.map((prov) => {
@@ -232,6 +278,7 @@ export default function FindNearbyPage() {
                 <span className="text-[11px] text-slate-500 font-semibold">Click pins to inspect details</span>
               </div>
               <LeafletMapComponent
+                customerLocation={{ lat: locationCenter.lat, lng: locationCenter.lng, name: locationCenter.name || initialLocation }}
                 providers={filteredProviders}
                 selectedProviderId={selectedProvider?.providerUniqueId}
                 onSelectProvider={(prov) => setSelectedProvider(prov)}

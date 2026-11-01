@@ -17,6 +17,33 @@ export const customerApi = {
     };
   },
 
+  updateCustomerProfile: async (customerUniqueId, profile) => {
+    const res = await axiosInstance.put(`/customers/${customerUniqueId}`, {
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      phoneNumber: profile.phoneNumber,
+      profileImage: profile.profileImage,
+      gender: profile.gender,
+      status: profile.status,
+      dateOfBirth: profile.dateOfBirth || null
+    });
+    return {
+      id: res.data.id,
+      customerUniqueId: res.data.uniqueId,
+      firstName: res.data.firstName,
+      lastName: res.data.lastName,
+      name: `${res.data.firstName || ''} ${res.data.lastName || ''}`.trim(),
+      phone: res.data.phoneNumber,
+      phoneNumber: res.data.phoneNumber,
+      profileImage: res.data.profileImage,
+      avatar: res.data.profileImage,
+      gender: res.data.gender,
+      status: res.data.status,
+      dateOfBirth: res.data.dateOfBirth,
+      createdAt: res.data.createdAt
+    };
+  },
+
   getSavedAddresses: async (customerUniqueId) => {
     const res = await axiosInstance.get(`/customers/${customerUniqueId}/addresses`);
     return (res.data || []).map((addr) => ({
@@ -67,6 +94,38 @@ export const customerApi = {
       addressLine2: res.data.addressLine2,
       city: res.data.city,
       state: res.data.state,
+      postalCode: res.data.postalCode,
+      latitude: res.data.latitude,
+      longitude: res.data.longitude
+    };
+  },
+
+  updateSavedAddress: async (customerUniqueId, addressUniqueId, addressData) => {
+    const type = String(addressData.type || addressData.label || 'HOME').toUpperCase();
+    const payload = {
+      addressType: ['HOME', 'OFFICE', 'OTHER'].includes(type) ? type : 'OTHER',
+      addressLine1: addressData.addressLine1,
+      addressLine2: addressData.addressLine2 || '',
+      city: addressData.city,
+      state: addressData.state,
+      country: addressData.country || 'India',
+      postalCode: addressData.postalCode,
+      latitude: addressData.latitude,
+      longitude: addressData.longitude,
+      defaultAddress: Boolean(addressData.isDefault)
+    };
+    const res = await axiosInstance.put(`/customers/${customerUniqueId}/addresses/${addressUniqueId}`, payload);
+    return {
+      id: res.data.uniqueId || String(res.data.id),
+      uniqueId: res.data.uniqueId,
+      label: res.data.addressType,
+      type: res.data.addressType,
+      isDefault: res.data.defaultAddress,
+      addressLine1: res.data.addressLine1,
+      addressLine2: res.data.addressLine2,
+      city: res.data.city,
+      state: res.data.state,
+      country: res.data.country,
       postalCode: res.data.postalCode,
       latitude: res.data.latitude,
       longitude: res.data.longitude

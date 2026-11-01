@@ -1,13 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Phone, MapPin, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Phone, MapPin, ArrowLeft, RefreshCw, CreditCard, FileText, CheckCircle2 } from 'lucide-react';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
 import StatusTimeline from '../../components/booking/StatusTimeline';
 import StatusBadge from '../../components/common/StatusBadge';
+import PaymentStatusBadge from '../../components/payment/PaymentStatusBadge';
+import ReceiptModal from '../../components/payment/ReceiptModal';
 import LeafletMapComponent from '../../components/map/LeafletMapComponent';
 import { bookingApi } from '../../api/bookingApi';
 import { useNotification } from '../../context/NotificationContext';
+import { trackingApi } from '../../api/trackingApi';
+import { useTrackingSocket } from '../../hooks/useTrackingSocket';
+import { useAuth } from '../../context/AuthContext';
 
 export default function BookingTrackingPage() {
   const { uniqueId } = useParams();
@@ -16,18 +21,45 @@ export default function BookingTrackingPage() {
   const [changingProvider, setChangingProvider] = useState(false);
   const [providers, setProviders] = useState([]);
   const [updating, setUpdating] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [providerLocation, setProviderLocation] = useState(null);
+  const [trackingError, setTrackingError] = useState('');
+  const { token } = useAuth();
   const { showToast } = useNotification();
 
-  useEffect(() => {
-    fetchBookingDetails();
-  }, [uniqueId]);
-
-  const fetchBookingDetails = () => {
+  const fetchBookingDetails = useCallback(() => {
     bookingApi.getBookingById(uniqueId).then(data => {
       setBooking(data);
       setLoading(false);
     }).catch(() => setLoading(false));
-  };
+  }, [uniqueId]);
+
+  useEffect(() => {
+    fetchBookingDetails();
+  }, [fetchBookingDetails]);
+
+  const handleLocation = useCallback((location) => {
+    setProviderLocation({
+      ...location,
+      lat: location.lat ?? location.latitude,
+      lng: location.lng ?? location.longitude
+    });
+    setTrackingError('');
+  }, []);
+
+  const { connectionState } = useTrackingSocket({
+    bookingUniqueId: booking?.bookingUniqueId || uniqueId,
+    token,
+    onLocation: handleLocation,
+    enabled: Boolean(booking?.providerUniqueId) && booking?.status === 'PROVIDER_EN_ROUTE'
+  });
+
+  useEffect(() => {
+    if (!booking?.bookingUniqueId || !booking?.providerUniqueId) return;
+    trackingApi.getLatest(booking.bookingUniqueId)
+      .then(setProviderLocation)
+      .catch(() => setTrackingError('Unable to recover the latest provider location.'));
+  }, [booking?.bookingUniqueId, booking?.providerUniqueId]);
 
   const canModifyProvider = ['PENDING', 'PROVIDER_SELECTED', 'WAITING_FOR_PROVIDER'].includes(booking?.status);
 
@@ -128,6 +160,55 @@ export default function BookingTrackingPage() {
           </div>
         </div>
 
+        {/* Payment Banner Section */}
+        {booking.paymentStatus === 'PAID' || booking.paymentStatus === 'SUCCESS' ? (
+          <section className="rounded-3xl border border-emerald-200 bg-emerald-50/80 p-5 sm:flex sm:items-center sm:justify-between sm:gap-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-emerald-100 text-emerald-600 rounded-2xl">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-extrabold text-emerald-950">Payment Completed</h2>
+                  <PaymentStatusBadge status="PAID" />
+                </div>
+                <p className="mt-0.5 text-xs text-emerald-800">
+                  Total Paid: ₹{(booking.totalPrice || booking.totalAmount || 0).toFixed(2)} · Verified server-side
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowReceipt(true)}
+              className="mt-3 sm:mt-0 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" /> View Receipt
+            </button>
+          </section>
+        ) : booking.status === 'COMPLETED' ? (
+          <section className="rounded-3xl border border-indigo-200 bg-indigo-50/90 p-5 sm:flex sm:items-center sm:justify-between sm:gap-6 shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-indigo-100 text-indigo-600 rounded-2xl">
+                <CreditCard className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-extrabold text-indigo-950">Service Completed — Payment Due</h2>
+                  <PaymentStatusBadge status="PENDING" />
+                </div>
+                <p className="mt-0.5 text-xs text-indigo-800">
+                  Your service is complete. Please complete online payment of ₹{(booking.totalPrice || booking.totalAmount || 0).toFixed(2)}.
+                </p>
+              </div>
+            </div>
+            <Link
+              to={`/customer/payment/${booking.bookingUniqueId || uniqueId}`}
+              className="mt-3 sm:mt-0 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-2.5 text-xs font-black text-white shadow-md hover:from-indigo-700 hover:to-blue-700 flex items-center gap-2"
+            >
+              <CreditCard className="w-4 h-4" /> Pay Now
+            </Link>
+          </section>
+        ) : null}
+
         {canModifyProvider && (
           <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
             <div>
@@ -171,6 +252,25 @@ export default function BookingTrackingPage() {
           </div>
 
           <div className="lg:col-span-6 space-y-4">
+            {booking.status === 'PROVIDER_EN_ROUTE' && (
+              <div className={`rounded-2xl border px-4 py-3 text-xs font-semibold ${
+                connectionState === 'connected' && !providerLocation?.stale
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : 'border-amber-200 bg-amber-50 text-amber-800'
+              }`}>
+                {connectionState === 'connected' && !providerLocation?.stale
+                  ? 'Live provider location connected'
+                  : providerLocation?.stale
+                    ? 'Provider location is temporarily stale'
+                    : 'Reconnecting to live provider tracking'}
+                {providerLocation?.receivedAt && (
+                  <span className="block mt-1 font-normal">
+                    Last update: {new Date(providerLocation.receivedAt).toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
+            )}
+            {trackingError && <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">{trackingError}</p>}
             <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
               <div className="flex items-center justify-between px-2">
                 <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
@@ -185,6 +285,7 @@ export default function BookingTrackingPage() {
                   lng: booking.longitude || 76.9515,
                   name: booking.customerAddress || 'Coimbatore'
                 }}
+                providerLocation={providerLocation}
                 providers={[]}
                 height="400px"
               />
@@ -192,6 +293,13 @@ export default function BookingTrackingPage() {
           </div>
         </div>
       </main>
+
+      {showReceipt && (
+        <ReceiptModal
+          bookingUniqueId={booking.bookingUniqueId || uniqueId}
+          onClose={() => setShowReceipt(false)}
+        />
+      )}
 
       <Footer />
     </div>

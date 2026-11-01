@@ -28,7 +28,7 @@ export default function ServicesPage() {
   });
 
   const handleBookService = (srv) => {
-    updateDraft({ service: srv, serviceCharge: srv.startingPrice });
+    updateDraft({ service: srv, serviceCharge: srv.startingPrice, bookingUniqueId: undefined, provider: null, distanceKm: undefined, distanceCharge: undefined });
     navigate('/customer/select-address');
   };
 

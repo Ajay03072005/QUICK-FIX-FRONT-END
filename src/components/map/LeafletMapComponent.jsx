@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Star, MapPin, Wrench, ShieldCheck, Navigation } from 'lucide-react';
 import StarRating from '../common/StarRating';
 
 // Custom Marker Icons using Leaflet L.divIcon for modern CSS design
@@ -52,6 +51,8 @@ export default function LeafletMapComponent({
   providers = [],
   selectedProviderId = null,
   onSelectProvider = () => {},
+  providerLocation = null,
+  route = [],
   height = "500px"
 }) {
   const centerPos = [customerLocation.lat, customerLocation.lng];
@@ -83,8 +84,9 @@ export default function LeafletMapComponent({
 
         {/* Nearby Provider Location Pins */}
         {providers.map((prov) => {
-          const lat = prov.coordinates?.lat || customerLocation.lat + (Math.random() - 0.5) * 0.03;
-          const lng = prov.coordinates?.lng || customerLocation.lng + (Math.random() - 0.5) * 0.03;
+          const lat = prov.coordinates?.lat;
+          const lng = prov.coordinates?.lng;
+          if (lat == null || lng == null) return null;
           const isSelected = selectedProviderId === prov.providerUniqueId;
 
           return (
@@ -122,6 +124,12 @@ export default function LeafletMapComponent({
             </Marker>
           );
         })}
+        {providerLocation?.lat != null && providerLocation?.lng != null && (
+          <Marker position={[providerLocation.lat, providerLocation.lng]} icon={createProviderIcon(false, true)}>
+            <Popup><span className="text-xs font-semibold">Assigned provider</span></Popup>
+          </Marker>
+        )}
+        {route.length > 1 && <Polyline positions={route} pathOptions={{ color: '#4f46e5', weight: 5, opacity: 0.75 }} />}
       </MapContainer>
     </div>
   );
