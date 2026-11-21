@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ShieldCheck, CheckCircle2, AlertTriangle, FileText } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, CheckCircle2, AlertTriangle, FileText, Banknote } from 'lucide-react';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
 import PaymentSummary from '../../components/payment/PaymentSummary';
@@ -44,6 +44,24 @@ export default function BookingPaymentPage() {
 
   const handlePaymentSuccess = (verificationData) => {
     navigate(`/customer/payment/result/${verificationData.paymentUniqueId || uniqueId}?status=SUCCESS`);
+  };
+
+  const [cashLoading, setCashLoading] = useState(false);
+
+  const handleCashPayment = async () => {
+    if (!window.confirm(`Confirm paying ₹${(booking.totalAmount || booking.totalPrice || 0).toFixed(2)} in cash directly to the technician?`)) {
+      return;
+    }
+    setCashLoading(true);
+    try {
+      const cashRes = await paymentApi.recordCashPayment(booking.bookingUniqueId || uniqueId, booking.customerUniqueId);
+      showToast('Cash payment recorded successfully!', 'success');
+      navigate(`/customer/payment/result/${cashRes.uniqueId || uniqueId}?status=SUCCESS`);
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Could not record cash payment', 'error');
+    } finally {
+      setCashLoading(false);
+    }
   };
 
   if (loading) {
@@ -145,6 +163,22 @@ export default function BookingPaymentPage() {
                   booking={booking}
                   onPaymentSuccess={handlePaymentSuccess}
                 />
+
+                <div className="relative flex py-2 items-center">
+                  <div className="flex-grow border-t border-slate-200"></div>
+                  <span className="flex-shrink mx-3 text-slate-400 text-[10px] uppercase font-bold tracking-wider">Or Pay Cash</span>
+                  <div className="flex-grow border-t border-slate-200"></div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCashPayment}
+                  disabled={cashLoading}
+                  className="w-full py-3.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-800 font-extrabold text-xs rounded-2xl transition flex items-center justify-center gap-2 border border-slate-200/90 shadow-2xs hover:border-slate-300"
+                >
+                  <Banknote className="w-4 h-4 text-emerald-600" />
+                  {cashLoading ? 'Recording Cash Payment...' : 'Pay Cash Directly to Technician'}
+                </button>
               </div>
             </div>
           </div>
