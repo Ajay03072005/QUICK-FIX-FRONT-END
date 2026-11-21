@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { providerApi } from '../../api/providerApi';
 import { bookingApi } from '../../api/bookingApi';
 import { useNotification } from '../../context/NotificationContext';
+import { geocodeAddress, getCurrentCoordinates, reverseGeocodeCoordinates } from '../../utils/addressGeocoding';
 
 const Detail = ({ icon: Icon, label, value }) => <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-indigo-600 shadow-sm"><Icon size={18}/></span><div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</p><p className="mt-1 text-sm font-semibold text-slate-800">{value || 'Not provided'}</p></div></div>;
 
@@ -18,6 +19,7 @@ export default function ProviderProfilePage() {
   const [schedule, setSchedule] = useState([]);
   const [addressEditorOpen, setAddressEditorOpen] = useState(false);
   const [savingAddress, setSavingAddress] = useState(false);
+  const [locatingAddress, setLocatingAddress] = useState(false);
   const [addressForm, setAddressForm] = useState({ addressType: 'SERVICE', addressLine1: '', addressLine2: '', city: '', state: '', country: 'India', postalCode: '', latitude: '', longitude: '' });
   const { showToast } = useNotification();
 
@@ -28,10 +30,16 @@ export default function ProviderProfilePage() {
     providerApi.getSchedule(user.providerUniqueId).then((data) => setSchedule(Array.isArray(data) ? data : [])).catch(() => setSchedule([]));
   }, [user]);
 
+  useEffect(() => {
+    if (!addressEditorOpen || addressForm.addressLine1 || locatingAddress) return;
+    useCurrentLocation();
+  }, [addressEditorOpen]);
+
   const completed = bookings.filter((booking) => booking.status === 'COMPLETED').length;
   const categories = [...new Set((provider.services || []).map((service) => typeof service === 'string' ? service : service.name).filter(Boolean))];
   const recent = [...bookings].sort((a, b) => new Date(b.createdAt || b.bookingDate) - new Date(a.createdAt || a.bookingDate)).slice(0, 3);
   const isAvailable = ['AVAILABLE_NOW', 'AVAILABLE_TODAY'].includes(provider.availability);
+  const availabilityDays = schedule.filter((item) => item.isWorkingDay ?? item.workingDay).length;
 
   const openAddressEditor = () => {
     const address = provider.primaryAddress || {};
@@ -49,16 +57,18 @@ export default function ProviderProfilePage() {
     setAddressEditorOpen(true);
   };
 
-  const useCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      showToast('Location is not available in this browser.', 'error');
-      return;
+  const useCurrentLocation = async () => {
+    setLocatingAddress(true);
+    try {
+      const coords = await getCurrentCoordinates();
+      const detectedAddress = await reverseGeocodeCoordinates(coords.latitude, coords.longitude);
+      setAddressForm((current) => ({ ...current, ...detectedAddress, latitude: coords.latitude.toFixed(6), longitude: coords.longitude.toFixed(6) }));
+      showToast('Current location loaded. Review the address before saving.', 'success');
+    } catch {
+      showToast('Could not read your current location. Enter or edit the address manually.', 'error');
+    } finally {
+      setLocatingAddress(false);
     }
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => setAddressForm((current) => ({ ...current, latitude: coords.latitude.toFixed(6), longitude: coords.longitude.toFixed(6) })),
-      () => showToast('Could not read your current location. Enter coordinates manually.', 'error'),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
   };
 
   const savePrimaryAddress = async (event) => {
@@ -66,7 +76,8 @@ export default function ProviderProfilePage() {
     if (!user?.providerUniqueId) return;
     setSavingAddress(true);
     try {
-      const saved = await providerApi.updatePrimaryAddress(user.providerUniqueId, addressForm);
+      const coordinates = await geocodeAddress(addressForm);
+      const saved = await providerApi.updatePrimaryAddress(user.providerUniqueId, { ...addressForm, ...coordinates });
       const primaryAddress = { ...addressForm, primary: true, latitude: Number(saved.latitude), longitude: Number(saved.longitude) };
       setProvider((current) => ({ ...current, primaryAddress, addresses: [primaryAddress], address: [addressForm.addressLine1, addressForm.addressLine2, addressForm.city, addressForm.state, addressForm.postalCode].filter(Boolean).join(', '), latitude: primaryAddress.latitude, longitude: primaryAddress.longitude }));
       setAddressEditorOpen(false);
@@ -94,7 +105,7 @@ export default function ProviderProfilePage() {
         </section>
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {[{ label: 'Completed jobs', value: completed, icon: BriefcaseBusiness, tone: 'text-emerald-600' }, { label: 'Services offered', value: categories.length, icon: Wrench, tone: 'text-indigo-600' }, { label: 'Availability days', value: schedule.length, icon: CalendarDays, tone: 'text-amber-600' }, { label: 'Customer rating', value: provider.rating ? `${provider.rating}/5` : '—', icon: Star, tone: 'text-orange-500' }].map(({ label, value, icon: Icon, tone }) => <div key={label} className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"><Icon size={20} className={tone}/><p className="mt-4 text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p><p className="mt-1 text-2xl font-extrabold text-slate-900">{value}</p></div>)}
+          {[{ label: 'Completed jobs', value: completed, icon: BriefcaseBusiness, tone: 'text-emerald-600' }, { label: 'Services offered', value: categories.length, icon: Wrench, tone: 'text-indigo-600' }, { label: 'Availability days', value: availabilityDays, icon: CalendarDays, tone: 'text-amber-600' }, { label: 'Customer rating', value: provider.rating ? `${provider.rating}/5` : '—', icon: Star, tone: 'text-orange-500' }].map(({ label, value, icon: Icon, tone }) => <div key={label} className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"><Icon size={20} className={tone}/><p className="mt-4 text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p><p className="mt-1 text-2xl font-extrabold text-slate-900">{value}</p></div>)}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.05fr_.95fr]">
@@ -115,7 +126,7 @@ export default function ProviderProfilePage() {
         </section>
       </main>
       <Footer />
-      {addressEditorOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"><form onSubmit={savePrimaryAddress} className="max-h-[90vh] w-full max-w-xl space-y-4 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl sm:p-8"><div className="flex items-start justify-between"><div><h2 className="text-xl font-extrabold text-slate-900">Service address</h2><p className="mt-1 text-sm text-slate-500">Customers nearby use this location to find and book you.</p></div><button type="button" onClick={() => setAddressEditorOpen(false)} aria-label="Close address editor" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={20}/></button></div><label className="block text-sm font-semibold text-slate-700">Address line 1<input required value={addressForm.addressLine1} onChange={(e) => setAddressForm({ ...addressForm, addressLine1: e.target.value })} placeholder="Street, building or workshop" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-indigo-500"/></label><label className="block text-sm font-semibold text-slate-700">Address line 2<input value={addressForm.addressLine2} onChange={(e) => setAddressForm({ ...addressForm, addressLine2: e.target.value })} placeholder="Area or landmark" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-indigo-500"/></label><div className="grid gap-3 sm:grid-cols-2"><label className="text-sm font-semibold text-slate-700">City<input required value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-indigo-500"/></label><label className="text-sm font-semibold text-slate-700">State<input required value={addressForm.state} onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-indigo-500"/></label><label className="text-sm font-semibold text-slate-700">Postal code<input required value={addressForm.postalCode} onChange={(e) => setAddressForm({ ...addressForm, postalCode: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-indigo-500"/></label><label className="text-sm font-semibold text-slate-700">Country<input required value={addressForm.country} onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-indigo-500"/></label></div><div className="rounded-2xl bg-slate-50 p-4"><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-bold text-slate-800">Map coordinates</p><p className="text-xs text-slate-500">Required to match customers nearby.</p></div><button type="button" onClick={useCurrentLocation} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-bold text-indigo-700 shadow-sm hover:bg-indigo-50"><LocateFixed size={14}/>Use current location</button></div><div className="grid gap-3 sm:grid-cols-2"><label className="text-xs font-semibold text-slate-600">Latitude<input required type="number" step="any" min="-90" max="90" value={addressForm.latitude} onChange={(e) => setAddressForm({ ...addressForm, latitude: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500"/></label><label className="text-xs font-semibold text-slate-600">Longitude<input required type="number" step="any" min="-180" max="180" value={addressForm.longitude} onChange={(e) => setAddressForm({ ...addressForm, longitude: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500"/></label></div></div><div className="flex justify-end gap-3 pt-1"><button type="button" onClick={() => setAddressEditorOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Cancel</button><button disabled={savingAddress} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60"><Save size={16}/>{savingAddress ? 'Saving…' : 'Save address'}</button></div></form></div>}
+      {addressEditorOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"><form onSubmit={savePrimaryAddress} className="max-h-[90vh] w-full max-w-xl space-y-4 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl sm:p-8"><div className="flex items-start justify-between"><div><h2 className="text-xl font-extrabold text-slate-900">Service address</h2><p className="mt-1 text-sm text-slate-500">Customers nearby use this location to find and book you.</p></div><button type="button" onClick={() => setAddressEditorOpen(false)} aria-label="Close address editor" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={20}/></button></div><label className="block text-sm font-semibold text-slate-700">Address line 1<input required value={addressForm.addressLine1} onChange={(e) => setAddressForm({ ...addressForm, addressLine1: e.target.value })} placeholder="Street, building or workshop" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-indigo-500"/></label><label className="block text-sm font-semibold text-slate-700">Address line 2<input value={addressForm.addressLine2} onChange={(e) => setAddressForm({ ...addressForm, addressLine2: e.target.value })} placeholder="Area or landmark" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-indigo-500"/></label><div className="grid gap-3 sm:grid-cols-2"><label className="text-sm font-semibold text-slate-700">City<input required value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-indigo-500"/></label><label className="text-sm font-semibold text-slate-700">State<input required value={addressForm.state} onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-indigo-500"/></label><label className="text-sm font-semibold text-slate-700">Postal code<input required value={addressForm.postalCode} onChange={(e) => setAddressForm({ ...addressForm, postalCode: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-indigo-500"/></label><label className="text-sm font-semibold text-slate-700">Country<input required value={addressForm.country} onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-indigo-500"/></label></div>      <div className="rounded-2xl bg-slate-50 p-4"><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-bold text-slate-800">Map coordinates</p><p className="text-xs text-slate-500">Required to match customers nearby.</p></div><button type="button" onClick={useCurrentLocation} disabled={locatingAddress} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-bold text-indigo-700 shadow-sm hover:bg-indigo-50 disabled:opacity-60"><LocateFixed size={14}/>{locatingAddress ? 'Finding location…' : 'Use current location'}</button></div><div className="grid gap-3 sm:grid-cols-2"><label className="text-xs font-semibold text-slate-600">Latitude<input required type="number" step="any" min="-90" max="90" value={addressForm.latitude} onChange={(e) => setAddressForm({ ...addressForm, latitude: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500"/></label><label className="text-xs font-semibold text-slate-600">Longitude<input required type="number" step="any" min="-180" max="180" value={addressForm.longitude} onChange={(e) => setAddressForm({ ...addressForm, longitude: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500"/></label></div></div><div className="flex justify-end gap-3 pt-1"><button type="button" onClick={() => setAddressEditorOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Cancel</button><button disabled={savingAddress} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60"><Save size={16}/>{savingAddress ? 'Saving…' : 'Save address'}</button></div></form></div>}
     </div>
   );
 }

@@ -74,12 +74,12 @@ export const customerApi = {
       addressType: typeVal,
       addressLine1: addressData.addressLine1,
       addressLine2: addressData.addressLine2 || '',
-      city: addressData.city || 'Coimbatore',
-      state: addressData.state || 'Tamil Nadu',
+      city: addressData.city,
+      state: addressData.state,
       country: 'India',
-      postalCode: addressData.postalCode || '641002',
-      latitude: addressData.latitude || 11.0125,
-      longitude: addressData.longitude || 76.9515,
+      postalCode: addressData.postalCode,
+      latitude: addressData.latitude == null ? null : Number(addressData.latitude),
+      longitude: addressData.longitude == null ? null : Number(addressData.longitude),
       defaultAddress: addressData.isDefault || false
     };
 

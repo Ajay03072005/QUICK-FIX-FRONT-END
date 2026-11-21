@@ -9,6 +9,7 @@ import { useBooking } from '../../context/BookingContext';
 import { customerApi } from '../../api/customerApi';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
+import { geocodeAddress, getCurrentCoordinates, reverseGeocodeCoordinates } from '../../utils/addressGeocoding';
 
 export default function SelectAddressPage() {
   const { user } = useAuth();
@@ -19,9 +20,10 @@ export default function SelectAddressPage() {
   const [date, setDate] = useState(bookingDraft.bookingDate || new Date(Date.now() + 86400000).toISOString().split('T')[0]);
   const [timeSlot, setTimeSlot] = useState(bookingDraft.bookingTime || '10:30 AM');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newAddr, setNewAddr] = useState({ label: 'HOME', addressLine1: '', addressLine2: '', city: 'Coimbatore', state: 'Tamil Nadu', postalCode: '641002' });
+  const [newAddr, setNewAddr] = useState({ label: 'HOME', addressLine1: '', addressLine2: '', city: '', state: '', postalCode: '' });
   const [editingAddress, setEditingAddress] = useState(null);
   const [savingAddress, setSavingAddress] = useState(false);
+  const [locatingAddress, setLocatingAddress] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,19 +35,31 @@ export default function SelectAddressPage() {
     });
   }, []);
 
+  useEffect(() => {
+    if (!showAddModal || editingAddress || newAddr.addressLine1 || locatingAddress) return;
+    useCurrentLocation();
+  }, [showAddModal]);
+
   const handleSelectAddress = (addr) => {
     setSelectedAddrId(addr.id);
     const changedAddress = bookingDraft.address?.id !== addr.id;
     updateDraft({ address: addr, ...(changedAddress ? { bookingUniqueId: undefined, provider: null } : {}) });
   };
 
-  const handleAddNewAddress = (e) => {
+  const handleAddNewAddress = async (e) => {
     e.preventDefault();
-    customerApi.addSavedAddress(user.customerUniqueId, newAddr).then(created => {
+    setSavingAddress(true);
+    try {
+      const coordinates = await geocodeAddress(newAddr);
+      const created = await customerApi.addSavedAddress(user.customerUniqueId, { ...newAddr, ...coordinates });
       setAddresses([created, ...addresses]);
       handleSelectAddress(created);
       setShowAddModal(false);
-    });
+    } catch {
+      showToast('Could not find that address. Check the city and PIN code.', 'error');
+    } finally {
+      setSavingAddress(false);
+    }
   };
 
   const startEditingAddress = (event, address) => {
@@ -70,15 +84,32 @@ export default function SelectAddressPage() {
     if (!user?.customerUniqueId || !editingAddress?.uniqueId) return;
     setSavingAddress(true);
     try {
-      const updated = await customerApi.updateSavedAddress(user.customerUniqueId, editingAddress.uniqueId, newAddr);
+      const coordinates = await geocodeAddress(newAddr);
+      const updated = await customerApi.updateSavedAddress(user.customerUniqueId, editingAddress.uniqueId, { ...newAddr, ...coordinates });
       setAddresses((current) => current.map((address) => address.id === editingAddress.id ? updated : address));
-      if (bookingDraft.address?.id === editingAddress.id) updateDraft({ address: updated });
+      if (bookingDraft.address?.id === editingAddress.id) {
+        updateDraft({ address: updated, bookingUniqueId: undefined, provider: null });
+      }
       setEditingAddress(null);
       showToast('Address updated successfully.', 'success');
     } catch {
       showToast('Could not update this address. Please try again.', 'error');
     } finally {
       setSavingAddress(false);
+    }
+  };
+
+  const useCurrentLocation = async () => {
+    setLocatingAddress(true);
+    try {
+      const coords = await getCurrentCoordinates();
+      const detectedAddress = await reverseGeocodeCoordinates(coords.latitude, coords.longitude);
+      setNewAddr((current) => ({ ...current, ...detectedAddress, latitude: coords.latitude, longitude: coords.longitude }));
+      showToast('Current location loaded. Review the address before saving.', 'success');
+    } catch {
+      showToast('Could not read your current location. Enter the address manually.', 'error');
+    } finally {
+      setLocatingAddress(false);
     }
   };
 
@@ -236,6 +267,7 @@ export default function SelectAddressPage() {
                 <label className="block font-bold text-slate-700 uppercase mb-1">Address type</label>
                 <select required value={newAddr.label} onChange={(e) => setNewAddr({ ...newAddr, label: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs"><option value="HOME">Home</option><option value="OFFICE">Office</option><option value="OTHER">Other</option></select>
               </div>
+              <button type="button" onClick={useCurrentLocation} disabled={locatingAddress} className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2.5 font-bold text-indigo-700 disabled:opacity-60"><MapPin className="h-4 w-4"/>{locatingAddress ? 'Finding location…' : 'Use my current location'}</button>
               <div>
                 <label className="block font-bold text-slate-700 uppercase mb-1">Address Line 1</label>
                 <input

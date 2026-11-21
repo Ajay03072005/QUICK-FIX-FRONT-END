@@ -6,6 +6,7 @@ import Footer from '../../components/common/Footer';
 import BookingStepper from '../../components/booking/BookingStepper';
 import PriceBreakdown from '../../components/booking/PriceBreakdown';
 import StarRating from '../../components/common/StarRating';
+import LeafletMapComponent from '../../components/map/LeafletMapComponent';
 import { useBooking } from '../../context/BookingContext';
 import { bookingApi } from '../../api/bookingApi';
 import { useNotification } from '../../context/NotificationContext';
@@ -25,17 +26,21 @@ export default function ProviderSelectionPage() {
   const navigate = useNavigate();
   const missingService = !bookingDraft.service?.uniqueId;
   const missingAddress = !bookingDraft.address?.uniqueId;
+  const missingCoordinates = !Number.isFinite(Number(bookingDraft.address?.latitude))
+    || !Number.isFinite(Number(bookingDraft.address?.longitude));
 
   useEffect(() => {
     let active = true;
     let timeoutId;
     const loadEligibleProviders = async () => {
-      if (missingService || missingAddress || !user?.customerUniqueId) {
+      if (missingService || missingAddress || missingCoordinates || !user?.customerUniqueId) {
         setDiscoveryError(!user?.customerUniqueId
           ? 'Sign in to your customer account before choosing a provider.'
           : missingService
             ? 'Your selected service is missing. Choose a service to continue.'
-            : 'Your service address is missing. Choose an address and appointment time to continue.');
+            : missingAddress
+              ? 'Your service address is missing. Choose an address and appointment time to continue.'
+              : 'Your service address has no map coordinates. Update the address before choosing a provider.');
         setLoading(false);
         return;
       }
@@ -48,16 +53,14 @@ export default function ProviderSelectionPage() {
             setDiscoveryError('Provider search is taking longer than expected. Please try again.');
           }
         }, 12000);
-        const draftBooking = bookingDraft.bookingUniqueId
-          ? { bookingUniqueId: bookingDraft.bookingUniqueId }
-          : await bookingApi.createBooking(user.customerUniqueId, {
-            serviceUniqueId: bookingDraft.service.uniqueId,
-            addressUniqueId: bookingDraft.address.uniqueId,
-            recipientName: user.name,
-            recipientPhone: user.phone,
-            bookingDate: bookingDraft.bookingDate,
-            bookingTime: toBackendTime(bookingDraft.bookingTime)
-          });
+        const draftBooking = await bookingApi.createBooking(user.customerUniqueId, {
+          serviceUniqueId: bookingDraft.service.uniqueId,
+          addressUniqueId: bookingDraft.address.uniqueId,
+          recipientName: user.name,
+          recipientPhone: user.phone,
+          bookingDate: bookingDraft.bookingDate,
+          bookingTime: toBackendTime(bookingDraft.bookingTime)
+        });
         if (!active) return;
         updateDraft({ bookingUniqueId: draftBooking.bookingUniqueId });
         const eligible = await bookingApi.findNearbyProvidersForBooking(draftBooking.bookingUniqueId);
@@ -66,7 +69,10 @@ export default function ProviderSelectionPage() {
           setDiscoveryError('');
         }
       } catch (error) {
-        if (active) setDiscoveryError(error.response?.data?.message || 'Unable to find eligible providers for this service and location. Please try again.');
+        if (active) {
+          const serverMessage = error.response?.data?.message || error.response?.data?.error;
+          setDiscoveryError(serverMessage || 'Unable to find eligible providers for this service and location. Please try again.');
+        }
       } finally {
         window.clearTimeout(timeoutId);
         if (active) setLoading(false);
@@ -77,7 +83,7 @@ export default function ProviderSelectionPage() {
       active = false;
       window.clearTimeout(timeoutId);
     };
-  }, [bookingDraft.service?.uniqueId, bookingDraft.address?.uniqueId, bookingDraft.bookingDate, bookingDraft.bookingTime, user?.customerUniqueId, user?.name, user?.phone, updateDraft, searchAttempt]);
+  }, [bookingDraft.service?.uniqueId, bookingDraft.address?.uniqueId, bookingDraft.address?.latitude, bookingDraft.address?.longitude, bookingDraft.bookingDate, bookingDraft.bookingTime, user?.customerUniqueId, user?.name, user?.phone, updateDraft, searchAttempt]);
 
   const retryProviderSearch = () => {
     setSearchAttempt((attempt) => attempt + 1);
@@ -86,17 +92,27 @@ export default function ProviderSelectionPage() {
   const recoverFromDiscoveryError = () => {
     if (!user?.customerUniqueId) navigate('/customer/login');
     else if (missingService) navigate('/customer/find-service');
-    else if (missingAddress) navigate('/customer/select-address');
+    else if (missingAddress || missingCoordinates) navigate('/customer/select-address');
     else retryProviderSearch();
   };
 
+  useEffect(() => {
+    if (!loading && (missingService || missingAddress)) {
+      const redirectTimer = window.setTimeout(() => {
+        navigate(missingService ? '/customer/find-service' : '/customer/select-address', { replace: true });
+      }, 3000);
+      return () => window.clearTimeout(redirectTimer);
+    }
+    return undefined;
+  }, [loading, missingService, missingAddress, navigate]);
+
   const handleSelectProvider = (prov) => {
-    const distance = calculateDistance(bookingDraft.address, prov);
-    if (distance === null) {
+    const distance = Number(prov.distance ?? calculateDistance(bookingDraft.address, prov));
+    if (!Number.isFinite(distance)) {
       showToast('Provider matching requires coordinates for both the saved address and provider.', 'error');
       return;
     }
-    const serviceCharge = bookingDraft.service?.startingPrice;
+    const serviceCharge = Number(prov.servicePrice ?? bookingDraft.service?.startingPrice ?? 0);
     const distanceCharge = calculateDistanceCharge(distance);
     updateDraft({
       provider: prov,
@@ -169,14 +185,25 @@ export default function ProviderSelectionPage() {
                   <span className="text-xs font-semibold text-slate-500">Based on your selected location</span>
                 </div>
 
-                {discoveryError && <div className="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 sm:flex-row sm:items-center sm:justify-between"><p>{discoveryError}</p><button type="button" onClick={recoverFromDiscoveryError} className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-bold text-rose-700 shadow-sm hover:bg-rose-100">{!user?.customerUniqueId ? 'Customer sign in' : missingService ? 'Choose a service' : missingAddress ? 'Choose an address' : 'Try again'}</button></div>}
+                {discoveryError && <div className="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 sm:flex-row sm:items-center sm:justify-between"><p>{discoveryError}</p><button type="button" onClick={recoverFromDiscoveryError} className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-bold text-rose-700 shadow-sm hover:bg-rose-100">{!user?.customerUniqueId ? 'Customer sign in' : missingService ? 'Choose a service' : (missingAddress || missingCoordinates) ? 'Choose an address' : 'Try again'}</button></div>}
                 {loading && !discoveryError && <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-6 text-sm font-semibold text-slate-600"><span className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent"/>Finding nearby providers for your address…</div>}
                 {!loading && !discoveryError && providers.length === 0 && (
                   <p className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">No eligible providers are available for this service and appointment.</p>
                 )}
+                {!loading && !discoveryError && providers.length > 0 && (
+                  <LeafletMapComponent
+                    customerLocation={{
+                      lat: Number(bookingDraft.address?.latitude),
+                      lng: Number(bookingDraft.address?.longitude),
+                      name: bookingDraft.address?.label || 'Service address'
+                    }}
+                    providers={providers}
+                    height="320px"
+                  />
+                )}
                 {providers.map((prov) => {
-                  const providerDistance = calculateDistance(bookingDraft.address, prov);
-                  const providerTotal = (bookingDraft.service?.startingPrice || 0) + calculateDistanceCharge(providerDistance);
+                  const providerDistance = Number(prov.distance ?? calculateDistance(bookingDraft.address, prov));
+                  const providerTotal = Number(prov.totalAmount ?? ((bookingDraft.service?.startingPrice || 0) + calculateDistanceCharge(providerDistance)));
 
                   return (
                     <div
@@ -198,7 +225,7 @@ export default function ProviderSelectionPage() {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-start gap-4">
                           <img
-                            src={prov.avatar}
+                            src={prov.profileImage || prov.avatar || `https://ui-avatars.com/api/?background=4f46e5&color=ffffff&name=${encodeURIComponent(prov.providerName)}`}
                             alt={prov.providerName}
                             className="w-16 h-16 rounded-2xl object-cover border border-slate-200 shrink-0"
                           />
@@ -209,7 +236,7 @@ export default function ProviderSelectionPage() {
                               <span className="text-xs font-bold text-indigo-600">{providerDistance} km away</span>
                             </div>
                             <span className="inline-block text-[11px] font-semibold text-emerald-700 mt-1">
-                              • {prov.availability === 'AVAILABLE_NOW' ? 'Available Now' : 'Available in 30 mins'}
+                              • {(prov.availabilityStatus || prov.availability) === 'AVAILABLE_NOW' ? 'Available Now' : 'Available soon'}
                             </span>
                           </div>
                         </div>
@@ -335,13 +362,17 @@ export default function ProviderSelectionPage() {
 }
 
 function calculateDistance(address, provider) {
-  if (![address?.latitude, address?.longitude, provider?.latitude, provider?.longitude].every(Number.isFinite)) {
+  const addressLatitude = Number(address?.latitude);
+  const addressLongitude = Number(address?.longitude);
+  const providerLatitude = Number(provider?.latitude);
+  const providerLongitude = Number(provider?.longitude);
+  if (![addressLatitude, addressLongitude, providerLatitude, providerLongitude].every(Number.isFinite)) {
     return null;
   }
-  const latDistance = (provider.latitude - address.latitude) * Math.PI / 180;
-  const lonDistance = (provider.longitude - address.longitude) * Math.PI / 180;
-  const a = Math.sin(latDistance / 2) ** 2 + Math.cos(address.latitude * Math.PI / 180)
-    * Math.cos(provider.latitude * Math.PI / 180) * Math.sin(lonDistance / 2) ** 2;
+  const latDistance = (providerLatitude - addressLatitude) * Math.PI / 180;
+  const lonDistance = (providerLongitude - addressLongitude) * Math.PI / 180;
+  const a = Math.sin(latDistance / 2) ** 2 + Math.cos(addressLatitude * Math.PI / 180)
+    * Math.cos(providerLatitude * Math.PI / 180) * Math.sin(lonDistance / 2) ** 2;
   return Math.round(6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 100) / 100;
 }
 

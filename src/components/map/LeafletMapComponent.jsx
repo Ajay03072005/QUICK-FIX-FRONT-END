@@ -47,7 +47,7 @@ function MapRecenter({ center }) {
 }
 
 export default function LeafletMapComponent({
-  customerLocation = { lat: 11.0125, lng: 76.9515, name: "Home - R.S. Puram, Coimbatore" },
+  customerLocation = null,
   providers = [],
   selectedProviderId = null,
   onSelectProvider = () => {},
@@ -55,7 +55,10 @@ export default function LeafletMapComponent({
   route = [],
   height = "500px"
 }) {
-  const centerPos = [customerLocation.lat, customerLocation.lng];
+  const customerLat = Number(customerLocation.lat);
+  const customerLng = Number(customerLocation.lng);
+  const centerPos = [customerLat, customerLng];
+  if (!Number.isFinite(customerLat) || !Number.isFinite(customerLng)) return null;
 
   return (
     <div style={{ height }} className="w-full relative rounded-2xl overflow-hidden shadow-lg border border-slate-200">
@@ -84,9 +87,9 @@ export default function LeafletMapComponent({
 
         {/* Nearby Provider Location Pins */}
         {providers.map((prov) => {
-          const lat = prov.coordinates?.lat;
-          const lng = prov.coordinates?.lng;
-          if (lat == null || lng == null) return null;
+          const lat = Number(prov.coordinates?.lat ?? prov.latitude);
+          const lng = Number(prov.coordinates?.lng ?? prov.longitude);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
           const isSelected = selectedProviderId === prov.providerUniqueId;
 
           return (

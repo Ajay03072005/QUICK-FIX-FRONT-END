@@ -5,19 +5,28 @@ import Footer from '../../components/common/Footer';
 import { customerApi } from '../../api/customerApi';
 import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
+import { geocodeAddress, getCurrentCoordinates, reverseGeocodeCoordinates } from '../../utils/addressGeocoding';
+import { useBooking } from '../../context/BookingContext';
 
 export default function SavedAddressesPage() {
   const [addresses, setAddresses] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [newAddr, setNewAddr] = useState({ label: 'HOME', addressLine1: '', addressLine2: '', city: 'Coimbatore', state: 'Tamil Nadu', postalCode: '641002' });
+  const [locatingAddress, setLocatingAddress] = useState(false);
+  const [newAddr, setNewAddr] = useState({ label: 'HOME', addressLine1: '', addressLine2: '', city: '', state: '', postalCode: '' });
   const { showToast } = useNotification();
   const { user } = useAuth();
+  const { bookingDraft, updateDraft } = useBooking();
 
   useEffect(() => {
     fetchAddresses();
   }, []);
+
+  useEffect(() => {
+    if (!showAddModal || editingAddress || newAddr.addressLine1 || locatingAddress) return;
+    useCurrentLocation();
+  }, [showAddModal]);
 
   const fetchAddresses = () => {
     if (user?.customerUniqueId) customerApi.getSavedAddresses(user.customerUniqueId).then(setAddresses);
@@ -30,13 +39,20 @@ export default function SavedAddressesPage() {
     });
   };
 
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
-    customerApi.addSavedAddress(user.customerUniqueId, newAddr).then(() => {
+    setSaving(true);
+    try {
+      const coordinates = await geocodeAddress(newAddr);
+      await customerApi.addSavedAddress(user.customerUniqueId, { ...newAddr, ...coordinates });
       showToast('New address saved', 'success');
       setShowAddModal(false);
       fetchAddresses();
-    });
+    } catch {
+      showToast('Could not find that address. Check the city and PIN code.', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const startEdit = (address) => {
@@ -59,14 +75,33 @@ export default function SavedAddressesPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await customerApi.updateSavedAddress(user.customerUniqueId, editingAddress.uniqueId, newAddr);
+      const coordinates = await geocodeAddress(newAddr);
+      await customerApi.updateSavedAddress(user.customerUniqueId, editingAddress.uniqueId, { ...newAddr, ...coordinates });
       showToast('Address updated successfully', 'success');
       setEditingAddress(null);
+      setShowAddModal(false);
+      if (bookingDraft.address?.id === editingAddress.id) {
+        updateDraft({ address: { ...editingAddress, ...newAddr, ...coordinates }, bookingUniqueId: undefined, provider: null });
+      }
       fetchAddresses();
     } catch {
       showToast('Could not update this address. Please try again.', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const useCurrentLocation = async () => {
+    setLocatingAddress(true);
+    try {
+      const coords = await getCurrentCoordinates();
+      const detectedAddress = await reverseGeocodeCoordinates(coords.latitude, coords.longitude);
+      setNewAddr((current) => ({ ...current, ...detectedAddress, latitude: coords.latitude, longitude: coords.longitude }));
+      showToast('Current location loaded. Review the address before saving.', 'success');
+    } catch {
+      showToast('Could not read your current location. Enter the address manually.', 'error');
+    } finally {
+      setLocatingAddress(false);
     }
   };
 
@@ -139,6 +174,7 @@ export default function SavedAddressesPage() {
                 <label className="block font-bold text-slate-700 uppercase mb-1">Address type</label>
                 <select required value={newAddr.label} onChange={(e) => setNewAddr({ ...newAddr, label: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"><option value="HOME">Home</option><option value="OFFICE">Office</option><option value="OTHER">Other</option></select>
               </div>
+              <button type="button" onClick={useCurrentLocation} disabled={locatingAddress} className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2.5 font-bold text-indigo-700 disabled:opacity-60"><MapPin className="h-4 w-4"/>{locatingAddress ? 'Finding location…' : 'Use my current location'}</button>
               <div>
                 <label className="block font-bold text-slate-700 uppercase mb-1">Address Line 1</label>
                 <input

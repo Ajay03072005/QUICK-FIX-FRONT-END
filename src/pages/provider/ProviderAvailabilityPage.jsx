@@ -37,7 +37,7 @@ export default function ProviderAvailabilityPage() {
             const dayName = DAY_MAP[item.weekday];
             if (dayName) {
               nextSched[dayName] = {
-                active: item.isWorkingDay,
+                active: item.isWorkingDay ?? item.workingDay ?? false,
                 start: item.startTime ? item.startTime.substring(0, 5) : '09:00',
                 end: item.endTime ? item.endTime.substring(0, 5) : '19:00'
               };

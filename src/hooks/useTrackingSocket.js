@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-const socketUrl = import.meta.env.VITE_TRACKING_WS_URL
-  || `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}${apiBaseUrl.replace(/\/api$/, '')}/ws`;
+const buildSocketUrl = () => {
+  if (import.meta.env.VITE_TRACKING_WS_URL) return import.meta.env.VITE_TRACKING_WS_URL;
+
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+  const apiUrl = new URL(apiBaseUrl, window.location.origin);
+  const socketProtocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+  const apiRoot = apiUrl.pathname.replace(/\/api\/?$/, '').replace(/\/$/, '');
+  return `${socketProtocol}//${apiUrl.host}${apiRoot}/ws`;
+};
+
+const socketUrl = buildSocketUrl();
 
 const encodeFrame = (command, headers, body = '') => {
   const headerText = Object.entries(headers)
