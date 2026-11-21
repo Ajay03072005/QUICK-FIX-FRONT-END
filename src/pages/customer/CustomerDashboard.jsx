@@ -9,9 +9,11 @@ import { useAuth } from '../../context/AuthContext';
 import { serviceApi } from '../../api/serviceApi';
 import { bookingApi } from '../../api/bookingApi';
 import { customerApi } from '../../api/customerApi';
+import { useBooking } from '../../context/BookingContext';
 
 export default function CustomerDashboard() {
   const { user } = useAuth();
+  const { updateDraft } = useBooking();
   const [recentBookings, setRecentBookings] = useState([]);
   const [services, setServices] = useState([]);
   const [addressCount, setAddressCount] = useState(0);
@@ -27,8 +29,14 @@ export default function CustomerDashboard() {
     customerApi.getSavedAddresses(user.customerUniqueId).then(addresses => setAddressCount(addresses.length));
   }, [user?.customerUniqueId]);
 
-  const activeStatuses = ['PENDING', 'PROVIDER_SELECTED', 'WAITING_FOR_PROVIDER', 'WAITING_ACCEPTANCE', 'PROVIDER_ACCEPTED', 'CONFIRMED', 'ACCEPTED', 'PROVIDER_EN_ROUTE', 'IN_PROGRESS', 'SERVICE_STARTED'];
-  const activeBookings = recentBookings.filter((booking) => activeStatuses.includes(String(booking.status || '').toUpperCase()));
+  const activeStatuses = ['PROVIDER_SELECTED', 'WAITING_FOR_PROVIDER', 'WAITING_ACCEPTANCE', 'PROVIDER_ACCEPTED', 'CONFIRMED', 'ACCEPTED', 'PROVIDER_EN_ROUTE', 'IN_PROGRESS', 'SERVICE_STARTED'];
+  const activeBookings = recentBookings.filter((booking) => {
+    const status = String(booking.status || '').toUpperCase();
+    if (status === 'DRAFT') return false;
+    const hasProvider = Boolean(booking.providerId || booking.providerName || booking.providerUniqueId);
+    if (!hasProvider) return false;
+    return activeStatuses.includes(status);
+  });
   const activeBooking = [...activeBookings].sort((a, b) => {
     const first = new Date(`${a.bookingDate || ''}T${a.bookingTime || '23:59:59'}`).getTime();
     const second = new Date(`${b.bookingDate || ''}T${b.bookingTime || '23:59:59'}`).getTime();
@@ -40,6 +48,18 @@ export default function CustomerDashboard() {
     if (searchTerm) {
       navigate(`/find-nearby?query=${encodeURIComponent(searchTerm)}`);
     }
+  };
+
+  const handleBookService = (srv) => {
+    updateDraft({
+      service: srv,
+      serviceCharge: srv.startingPrice || 399,
+      bookingUniqueId: undefined,
+      provider: null,
+      distanceKm: undefined,
+      distanceCharge: undefined
+    });
+    navigate('/customer/select-address');
   };
 
   return (
@@ -160,14 +180,28 @@ export default function CustomerDashboard() {
               <div key={srv.uniqueId} className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3">
                 <div>
                   <span className="text-[10px] font-bold text-indigo-600 uppercase">{srv.categoryName}</span>
-                  <h3 className="font-bold text-slate-900 text-sm mt-1">{srv.name}</h3>
+                  <Link to={`/services/${srv.uniqueId}`} className="block hover:text-indigo-600 transition">
+                    <h3 className="font-bold text-slate-900 text-sm mt-1">{srv.name}</h3>
+                  </Link>
                   <p className="text-xs text-slate-500 line-clamp-2 mt-1">{srv.shortDescription}</p>
                 </div>
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                   <span className="font-extrabold text-slate-900 text-base">₹{srv.startingPrice}</span>
-                  <Link to={`/services/${srv.uniqueId}`} className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg transition">
-                    Book
-                  </Link>
+                  <div className="flex items-center gap-1.5">
+                    <Link
+                      to={`/services/${srv.uniqueId}`}
+                      className="px-2.5 py-1.5 text-slate-500 hover:text-indigo-600 font-semibold text-xs rounded-lg transition"
+                    >
+                      Details
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleBookService(srv)}
+                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg shadow-sm transition"
+                    >
+                      Book
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

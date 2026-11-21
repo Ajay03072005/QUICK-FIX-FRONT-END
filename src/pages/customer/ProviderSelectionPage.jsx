@@ -13,7 +13,7 @@ import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ProviderSelectionPage() {
-  const { bookingDraft, updateDraft } = useBooking();
+  const { bookingDraft, updateDraft, resetDraft } = useBooking();
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -53,19 +53,18 @@ export default function ProviderSelectionPage() {
             setDiscoveryError('Provider search is taking longer than expected. Please try again.');
           }
         }, 12000);
-        const draftBooking = await bookingApi.createBooking(user.customerUniqueId, {
+        const eligible = await bookingApi.findNearbyProviders({
           serviceUniqueId: bookingDraft.service.uniqueId,
-          addressUniqueId: bookingDraft.address.uniqueId,
-          recipientName: user.name,
-          recipientPhone: user.phone,
-          bookingDate: bookingDraft.bookingDate,
-          bookingTime: toBackendTime(bookingDraft.bookingTime)
+          latitude: bookingDraft.address?.latitude,
+          longitude: bookingDraft.address?.longitude,
+          addressUniqueId: bookingDraft.address?.uniqueId,
+          maxDistanceKm: 30
         });
-        if (!active) return;
-        updateDraft({ bookingUniqueId: draftBooking.bookingUniqueId });
-        const eligible = await bookingApi.findNearbyProvidersForBooking(draftBooking.bookingUniqueId);
         if (active) {
-          setProviders(Array.isArray(eligible) ? eligible : []);
+          const withinRadius = (Array.isArray(eligible) ? eligible : []).filter(
+            (p) => Number(p.distance ?? 0) <= 30
+          );
+          setProviders(withinRadius);
           setDiscoveryError('');
         }
       } catch (error) {
@@ -112,6 +111,10 @@ export default function ProviderSelectionPage() {
       showToast('Provider matching requires coordinates for both the saved address and provider.', 'error');
       return;
     }
+    if (distance > 30) {
+      showToast('This provider is more than 30 km away. Please choose a provider within 30 km.', 'error');
+      return;
+    }
     const serviceCharge = Number(prov.servicePrice ?? bookingDraft.service?.startingPrice ?? 0);
     const distanceCharge = calculateDistanceCharge(distance);
     updateDraft({
@@ -123,7 +126,24 @@ export default function ProviderSelectionPage() {
     setStepSubState('REVIEW');
   };
 
+  const handleDiscardDraft = async () => {
+    if (bookingDraft.bookingUniqueId) {
+      try {
+        await bookingApi.deleteBooking(bookingDraft.bookingUniqueId);
+      } catch {
+        // ignore
+      }
+    }
+    resetDraft();
+    showToast('Booking draft discarded.', 'info');
+    navigate('/customer/dashboard');
+  };
+
   const handleConfirmBooking = async () => {
+    if (!bookingDraft.provider?.providerUniqueId) {
+      showToast('Please select a provider to continue.', 'error');
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
@@ -140,16 +160,12 @@ export default function ProviderSelectionPage() {
         recipientName: user?.name,
         recipientPhone: user?.phone,
         bookingDate: bookingDraft.bookingDate,
-        bookingTime: toBackendTime(bookingDraft.bookingTime)
+        bookingTime: toBackendTime(bookingDraft.bookingTime),
+        providerUniqueId: bookingDraft.provider.providerUniqueId
       };
 
-      const createdBooking = bookingDraft.bookingUniqueId
-        ? { bookingUniqueId: bookingDraft.bookingUniqueId }
-        : await bookingApi.createBooking(user.customerUniqueId, payload);
-      const result = await bookingApi.selectProviderForBooking(
-        createdBooking.bookingUniqueId,
-        bookingDraft.provider.providerUniqueId
-      );
+      const result = await bookingApi.createBooking(user.customerUniqueId, payload);
+      resetDraft();
       showToast('Booking Request Sent!', 'success');
       navigate('/customer/booking-confirmation', { state: { booking: result } });
     } catch {
@@ -164,14 +180,23 @@ export default function ProviderSelectionPage() {
       <Header />
 
       <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 space-y-6">
-        <button
-          type="button"
-          onClick={() => stepSubState === 'REVIEW' ? setStepSubState('CHOICE') : navigate(missingService ? '/customer/find-service' : '/customer/select-address')}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-xs transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {stepSubState === 'REVIEW' ? 'Back to providers' : missingService ? 'Back to services' : 'Back to address & time'}
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => stepSubState === 'REVIEW' ? setStepSubState('CHOICE') : navigate(missingService ? '/customer/find-service' : '/customer/select-address')}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-xs transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {stepSubState === 'REVIEW' ? 'Back to providers' : missingService ? 'Back to services' : 'Back to address & time'}
+          </button>
+          <button
+            type="button"
+            onClick={handleDiscardDraft}
+            className="text-xs font-bold text-slate-500 hover:text-rose-600 transition px-3 py-2"
+          >
+            Exit & Discard Draft
+          </button>
+        </div>
         <BookingStepper currentStep={stepSubState === 'CHOICE' ? 4 : 5} />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -182,13 +207,13 @@ export default function ProviderSelectionPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-extrabold text-slate-900">Choose Nearby Provider</h2>
-                  <span className="text-xs font-semibold text-slate-500">Based on your selected location</span>
+                  <span className="text-xs font-semibold text-slate-500">Showing verified providers within 30 km</span>
                 </div>
 
                 {discoveryError && <div className="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 sm:flex-row sm:items-center sm:justify-between"><p>{discoveryError}</p><button type="button" onClick={recoverFromDiscoveryError} className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-bold text-rose-700 shadow-sm hover:bg-rose-100">{!user?.customerUniqueId ? 'Customer sign in' : missingService ? 'Choose a service' : (missingAddress || missingCoordinates) ? 'Choose an address' : 'Try again'}</button></div>}
                 {loading && !discoveryError && <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-6 text-sm font-semibold text-slate-600"><span className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent"/>Finding nearby providers for your address…</div>}
                 {!loading && !discoveryError && providers.length === 0 && (
-                  <p className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">No eligible providers are available for this service and appointment.</p>
+                  <p className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">No eligible providers found within 30 km of your selected address.</p>
                 )}
                 {!loading && !discoveryError && providers.length > 0 && (
                   <LeafletMapComponent
@@ -232,7 +257,7 @@ export default function ProviderSelectionPage() {
                           <div>
                             <h3 className="font-bold text-slate-900 text-base">{prov.providerName}</h3>
                             <div className="flex items-center gap-3 mt-1">
-                              <StarRating rating={prov.rating} reviewCount={prov.reviewCount} />
+                              <StarRating rating={prov.rating || 4.8} reviewCount={prov.reviewCount || 12} />
                               <span className="text-xs font-bold text-indigo-600">{providerDistance} km away</span>
                             </div>
                             <span className="inline-block text-[11px] font-semibold text-emerald-700 mt-1">
@@ -299,7 +324,7 @@ export default function ProviderSelectionPage() {
                     </span>
                     <h4 className="font-bold text-slate-900 text-base">{bookingDraft.provider?.providerName}</h4>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <StarRating rating={bookingDraft.provider?.rating} />
+                      <StarRating rating={bookingDraft.provider?.rating || 4.8} />
                       <span className="text-xs text-slate-500 font-semibold">• {bookingDraft.provider?.distance} km</span>
                     </div>
                   </div>

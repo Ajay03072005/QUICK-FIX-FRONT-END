@@ -56,9 +56,18 @@ export default function CustomerProfilePage() {
     }
   };
 
-  const completed = bookings.filter((booking) => booking.status === 'COMPLETED').length;
-  const active = bookings.filter((booking) => !['COMPLETED', 'CUSTOMER_CANCELLED', 'CANCELLED'].includes(booking.status)).length;
-  const recent = [...bookings].sort((a, b) => new Date(b.createdAt || b.bookingDate) - new Date(a.createdAt || a.bookingDate)).slice(0, 3);
+  const isValidBooking = (b) => {
+    if (!b) return false;
+    const status = String(b.status || '').toUpperCase();
+    if (status === 'DRAFT') return false;
+    const hasProvider = Boolean(b.providerId || b.providerName || b.providerUniqueId);
+    if (status === 'PENDING' && !hasProvider) return false;
+    return true;
+  };
+  const validBookings = bookings.filter(isValidBooking);
+  const completed = validBookings.filter((booking) => booking.status === 'COMPLETED').length;
+  const active = validBookings.filter((booking) => !['COMPLETED', 'CUSTOMER_CANCELLED', 'CANCELLED', 'PROVIDER_CANCELLED', 'PROVIDER_REJECTED', 'REJECTED'].includes(booking.status)).length;
+  const recent = [...validBookings].sort((a, b) => new Date(b.createdAt || b.bookingDate) - new Date(a.createdAt || a.bookingDate)).slice(0, 3);
   const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : 'Quick-Fix member';
 
   const handleLogout = () => { logout(); navigate('/'); };
@@ -76,7 +85,7 @@ export default function CustomerProfilePage() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {[{ label: 'Total bookings', value: bookings.length, icon: CalendarDays, color: 'text-indigo-600', to: '/customer/bookings' }, { label: 'Completed services', value: completed, icon: ClipboardCheck, color: 'text-emerald-600', to: '/customer/bookings' }, { label: 'Saved addresses', value: addresses.length, icon: MapPin, color: 'text-amber-600', to: '/customer/addresses' }].map(({ label, value, icon: Icon, color, to }) => <Link key={label} to={to} className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><div><p className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p><p className="mt-2 text-3xl font-extrabold text-slate-900">{value}</p></div><Icon className={color} size={24}/></Link>)}
+          {[{ label: 'Total bookings', value: validBookings.length, icon: CalendarDays, color: 'text-indigo-600', to: '/customer/bookings' }, { label: 'Completed services', value: completed, icon: ClipboardCheck, color: 'text-emerald-600', to: '/customer/bookings' }, { label: 'Saved addresses', value: addresses.length, icon: MapPin, color: 'text-amber-600', to: '/customer/addresses' }].map(({ label, value, icon: Icon, color, to }) => <Link key={label} to={to} className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><div><p className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p><p className="mt-2 text-3xl font-extrabold text-slate-900">{value}</p></div><Icon className={color} size={24}/></Link>)}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">

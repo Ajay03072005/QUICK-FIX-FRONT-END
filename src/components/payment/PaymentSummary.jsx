@@ -60,14 +60,14 @@ export default function PaymentSummary({ booking }) {
       <div className="space-y-2.5 text-sm">
         <div className="flex justify-between text-slate-600">
           <span>Service Base Charge</span>
-          <span className="font-semibold text-slate-900">₹{servicePrice.toFixed(2)}</span>
+          <span className="font-semibold text-slate-900">₹{(Number(servicePrice) || 0).toFixed(2)}</span>
         </div>
 
         <div className="flex justify-between text-slate-600">
           <span className="flex items-center gap-1">
-            Distance Travel Fee ({distanceKm} km)
+            Distance Travel Fee ({distanceKm || 0} km)
           </span>
-          <span className="font-semibold text-slate-900">₹{distanceCharge.toFixed(2)}</span>
+          <span className="font-semibold text-slate-900">₹{(Number(distanceCharge) || 0).toFixed(2)}</span>
         </div>
 
         <div className="pt-3 border-t border-dashed border-slate-200 flex justify-between items-baseline">
@@ -75,7 +75,7 @@ export default function PaymentSummary({ booking }) {
             <span className="font-extrabold text-slate-900 text-lg">Total Amount</span>
             <p className="text-[11px] text-slate-400 font-medium">Inclusive of all taxes & doorstep delivery</p>
           </div>
-          <span className="text-2xl font-black text-indigo-600">₹{totalAmount.toFixed(2)}</span>
+          <span className="text-2xl font-black text-indigo-600">₹{(Number(totalAmount) || 0).toFixed(2)}</span>
         </div>
       </div>
 

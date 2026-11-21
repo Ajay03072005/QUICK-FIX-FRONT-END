@@ -26,7 +26,8 @@ export const bookingApi = {
       recipientName: bookingRequest.recipientName,
       recipientPhone: bookingRequest.recipientPhone,
       bookingDate: bookingRequest.bookingDate,
-      bookingTime: bookingRequest.bookingTime
+      bookingTime: bookingRequest.bookingTime,
+      providerUniqueId: bookingRequest.providerUniqueId || null
     };
 
     const res = await axiosInstance.post('/bookings', payload, {
@@ -35,8 +36,26 @@ export const bookingApi = {
     return normalizeBooking(res.data);
   },
 
+  findNearbyProviders: async ({ serviceUniqueId, latitude, longitude, addressUniqueId, maxDistanceKm = 30 }) => {
+    const params = { serviceUniqueId, maxDistanceKm };
+    if (latitude != null && longitude != null) {
+      params.latitude = latitude;
+      params.longitude = longitude;
+    }
+    if (addressUniqueId) {
+      params.addressUniqueId = addressUniqueId;
+    }
+    const res = await axiosInstance.get('/bookings/providers', { params });
+    return res.data;
+  },
+
   findNearbyProvidersForBooking: async (bookingUniqueId) => {
     const res = await axiosInstance.get(`/bookings/${bookingUniqueId}/providers`);
+    return res.data;
+  },
+
+  deleteBooking: async (bookingUniqueId) => {
+    const res = await axiosInstance.delete(`/bookings/${bookingUniqueId}`);
     return res.data;
   },
 

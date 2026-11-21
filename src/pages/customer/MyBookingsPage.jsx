@@ -41,9 +41,13 @@ export default function MyBookingsPage() {
   ];
 
   const filteredBookings = bookings.filter(b => {
-    if (activeTab === 'ALL') return true;
     const status = String(b.status || '').toUpperCase();
-    if (activeTab === 'PENDING') return ['PENDING', 'PROVIDER_SELECTED', 'WAITING_FOR_PROVIDER', 'WAITING_ACCEPTANCE'].includes(status);
+    if (status === 'DRAFT') return false;
+    const hasProvider = Boolean(b.providerId || b.providerName || b.providerUniqueId);
+    if (!hasProvider && (status === 'PENDING' || status === 'DRAFT')) return false;
+
+    if (activeTab === 'ALL') return true;
+    if (activeTab === 'PENDING') return ['WAITING_FOR_PROVIDER', 'WAITING_ACCEPTANCE', 'PROVIDER_SELECTED'].includes(status) || (status === 'PENDING' && hasProvider);
     if (activeTab === 'ACTIVE') return ['PROVIDER_ACCEPTED', 'CONFIRMED', 'ACCEPTED', 'PROVIDER_EN_ROUTE', 'IN_PROGRESS', 'SERVICE_STARTED'].includes(status);
     if (activeTab === 'CANCELLED') return ['CUSTOMER_CANCELLED', 'PROVIDER_CANCELLED', 'CANCELLED', 'PROVIDER_REJECTED', 'REJECTED'].includes(status);
     return status === activeTab;

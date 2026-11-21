@@ -157,15 +157,15 @@ export default function ReceiptModal({ bookingUniqueId, paymentUniqueId, onClose
             <div className="space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-700 font-medium">{receipt.serviceName || 'Home Service'} - Base Fee</span>
-                <span className="font-bold text-slate-900">₹{servicePrice.toFixed(2)}</span>
+                <span className="font-bold text-slate-900">₹{(Number(servicePrice) || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-700 font-medium">Doorstep Conveyance & Distance Fee</span>
-                <span className="font-bold text-slate-900">₹{distanceCharge.toFixed(2)}</span>
+                <span className="font-bold text-slate-900">₹{(Number(distanceCharge) || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between pt-2 text-sm font-black text-slate-900">
                 <span>Total Amount Paid</span>
-                <span className="text-indigo-600 text-lg">₹{totalAmount.toFixed(2)}</span>
+                <span className="text-indigo-600 text-lg">₹{(Number(totalAmount) || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
