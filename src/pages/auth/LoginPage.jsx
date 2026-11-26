@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Wrench, Mail, Lock, User, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Wrench, Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../api/authApi';
 import { useNotification } from '../../context/NotificationContext';
@@ -35,20 +35,16 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickDemoLogin = () => {
-    showToast('Demo login is disabled. Use a real account to sign in.', 'error');
-  };
-
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
         <Link to="/" className="inline-flex items-center gap-2.5">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30">
             <Wrench className="w-6 h-6" />
           </div>
           <span className="text-3xl font-extrabold text-white">
-            Quick<span className="text-indigo-400">-Fix</span>
+            Quick<span className="text-emerald-400">-Fix</span>
           </span>
         </Link>
         <h2 className="text-xl font-bold text-slate-200">Welcome Back</h2>
@@ -58,7 +54,7 @@ export default function LoginPage() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-6 shadow-2xl rounded-3xl border border-slate-200 sm:px-10 space-y-6">
           
-          <div className="rounded-xl bg-indigo-50 px-4 py-3 text-center text-sm font-bold text-indigo-700">
+          <div className="rounded-xl bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-800 border border-emerald-100">
             {role === 'PROVIDER' ? 'Service Provider Portal' : 'Customer Portal'}
           </div>
 
@@ -73,7 +69,7 @@ export default function LoginPage() {
                   placeholder={role === 'CUSTOMER' ? 'ajay.ram@example.com' : 'kumar.services@example.com'}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
                 />
               </div>
             </div>
@@ -81,7 +77,7 @@ export default function LoginPage() {
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-xs font-bold text-slate-700 uppercase">Password</label>
-                <Link to="/forgot-password" className="text-xs font-bold text-indigo-600 hover:underline">
+                <Link to="/forgot-password" className="text-xs font-bold text-emerald-700 hover:underline">
                   Forgot Password?
                 </Link>
               </div>
@@ -93,7 +89,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
                 />
               </div>
             </div>
@@ -101,7 +97,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/25 transition flex items-center justify-center gap-2"
             >
               {loading ? 'Logging in...' : `Login as ${role}`} <ArrowRight className="w-4 h-4" />
             </button>
@@ -115,7 +111,7 @@ export default function LoginPage() {
 
           <div className="text-center text-xs text-slate-500">
             Don't have an account?{' '}
-            <Link to={role === 'PROVIDER' ? '/provider/register' : '/customer/register'} className="font-bold text-indigo-600 hover:underline">
+            <Link to={role === 'PROVIDER' ? '/provider/register' : '/customer/register'} className="font-bold text-emerald-700 hover:underline">
               Create Account
             </Link>
           </div>

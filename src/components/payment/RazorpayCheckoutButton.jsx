@@ -51,7 +51,7 @@ export default function RazorpayCheckoutButton({ booking, onPaymentSuccess, onPa
             contact: order.customerPhone || ''
           },
           theme: {
-            color: '#4f46e5'
+            color: '#059669'
           },
           handler: async (response) => {
             await handleVerifySignature({
@@ -129,7 +129,7 @@ export default function RazorpayCheckoutButton({ booking, onPaymentSuccess, onPa
       <button
         onClick={handleInitiatePayment}
         disabled={loading}
-        className="w-full bg-gradient-to-r from-indigo-600 via-indigo-700 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-extrabold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-3 group border border-indigo-500/20 active:scale-[0.99]"
+        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-600/30 transition-all duration-200 flex items-center justify-center gap-3 group border border-emerald-500/20 active:scale-[0.99]"
       >
         {loading ? (
           <>
@@ -138,9 +138,9 @@ export default function RazorpayCheckoutButton({ booking, onPaymentSuccess, onPa
           </>
         ) : (
           <>
-            <CreditCard className="w-5 h-5 text-cyan-300 group-hover:scale-110 transition-transform" />
+            <CreditCard className="w-5 h-5 text-emerald-200 group-hover:scale-110 transition-transform" />
             <span>Pay ₹{(booking.totalAmount || booking.totalPrice || 0).toFixed(2)} with Razorpay</span>
-            <Lock className="w-4 h-4 ml-auto text-indigo-200 opacity-80" />
+            <Lock className="w-4 h-4 ml-auto text-emerald-200 opacity-80" />
           </>
         )}
       </button>
@@ -149,12 +149,12 @@ export default function RazorpayCheckoutButton({ booking, onPaymentSuccess, onPa
       {showMockModal && orderDetails && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-slate-900 text-white p-5 rounded-2xl mb-5 flex items-center justify-between">
+            <div className="bg-slate-950 text-white p-5 rounded-2xl mb-5 flex items-center justify-between border border-slate-800">
               <div>
-                <span className="text-[10px] font-bold tracking-widest text-cyan-400 uppercase">Razorpay Gateway Test Mode</span>
+                <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase">Razorpay Gateway Test Mode</span>
                 <h3 className="font-extrabold text-base text-white mt-0.5">Quick-Fix Checkout</h3>
               </div>
-              <div className="bg-indigo-600 text-white font-black text-sm px-3 py-1.5 rounded-xl">
+              <div className="bg-emerald-600 text-white font-black text-sm px-3 py-1.5 rounded-xl shadow-xs">
                 ₹{orderDetails.amountInRupees}
               </div>
             </div>
@@ -175,15 +175,15 @@ export default function RazorpayCheckoutButton({ booking, onPaymentSuccess, onPa
                 </div>
               </div>
 
-              <div className="border border-indigo-100 bg-indigo-50/50 p-4 rounded-2xl text-xs text-indigo-900 space-y-2">
-                <p className="font-bold flex items-center gap-1.5">
-                  <Lock className="w-4 h-4 text-indigo-600" /> Payment Method Selection
+              <div className="border border-emerald-100 bg-emerald-50/50 p-4 rounded-2xl text-xs text-emerald-950 space-y-2">
+                <p className="font-bold flex items-center gap-1.5 text-emerald-800">
+                  <Lock className="w-4 h-4 text-emerald-600" /> Payment Method Selection
                 </p>
                 <div className="grid grid-cols-2 gap-2 pt-1">
-                  <div className="p-2.5 bg-white rounded-xl border border-indigo-200 text-center font-bold text-indigo-700">
+                  <div className="p-2.5 bg-white rounded-xl border border-emerald-300 text-center font-bold text-emerald-800 shadow-2xs">
                     UPI / QR Code
                   </div>
-                  <div className="p-2.5 bg-white rounded-xl border border-indigo-200 text-center font-bold text-indigo-700">
+                  <div className="p-2.5 bg-white rounded-xl border border-emerald-300 text-center font-bold text-emerald-800 shadow-2xs">
                     Card / NetBanking
                   </div>
                 </div>
@@ -194,7 +194,7 @@ export default function RazorpayCheckoutButton({ booking, onPaymentSuccess, onPa
               <button
                 onClick={handleMockPaySuccess}
                 disabled={loading}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 px-4 rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2 text-sm"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

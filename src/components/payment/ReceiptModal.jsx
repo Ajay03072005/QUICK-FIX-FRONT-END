@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Printer, Download, CheckCircle2, ShieldCheck, MapPin, Calendar, CreditCard, Wrench } from 'lucide-react';
+import { X, Printer, CheckCircle2, ShieldCheck, MapPin, Calendar, CreditCard, Wrench } from 'lucide-react';
 import { paymentApi } from '../../api/paymentApi';
 
 export default function ReceiptModal({ bookingUniqueId, paymentUniqueId, onClose }) {
@@ -90,7 +90,7 @@ export default function ReceiptModal({ bookingUniqueId, paymentUniqueId, onClose
           {/* Header Branding */}
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-xl font-black text-indigo-600 tracking-tight">QUICK-FIX</h1>
+              <h1 className="text-xl font-black text-emerald-700 tracking-tight">QUICK-FIX</h1>
               <p className="text-[11px] font-bold text-slate-400">On-Demand Local Services Platform</p>
             </div>
             <div className="text-right">
@@ -137,7 +137,7 @@ export default function ReceiptModal({ bookingUniqueId, paymentUniqueId, onClose
               <div className="flex justify-between">
                 <span className="text-slate-500 font-medium">Assigned Provider:</span>
                 <span className="font-bold text-slate-900 flex items-center gap-1">
-                  <Wrench className="w-3 h-3 text-indigo-500" /> {receipt.providerName}
+                  <Wrench className="w-3 h-3 text-emerald-600" /> {receipt.providerName}
                 </span>
               </div>
             )}
@@ -145,7 +145,7 @@ export default function ReceiptModal({ bookingUniqueId, paymentUniqueId, onClose
               <div className="flex justify-between">
                 <span className="text-slate-500 font-medium">Service Address:</span>
                 <span className="font-semibold text-slate-800 flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-indigo-500" /> {receipt.serviceAddress}
+                  <MapPin className="w-3 h-3 text-emerald-600" /> {receipt.serviceAddress}
                 </span>
               </div>
             )}
@@ -165,7 +165,7 @@ export default function ReceiptModal({ bookingUniqueId, paymentUniqueId, onClose
               </div>
               <div className="flex justify-between pt-2 text-sm font-black text-slate-900">
                 <span>Total Amount Paid</span>
-                <span className="text-indigo-600 text-lg">₹{(Number(totalAmount) || 0).toFixed(2)}</span>
+                <span className="text-emerald-700 text-lg">₹{(Number(totalAmount) || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>

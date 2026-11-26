@@ -15,14 +15,14 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
         <Link to="/" className="inline-flex items-center gap-2.5">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30">
             <Wrench className="w-6 h-6" />
           </div>
           <span className="text-3xl font-extrabold text-white">
-            Quick<span className="text-indigo-400">-Fix</span>
+            Quick<span className="text-emerald-400">-Fix</span>
           </span>
         </Link>
         <h2 className="text-xl font-bold text-slate-200">Reset Your Password</h2>
@@ -33,14 +33,14 @@ export default function ForgotPasswordPage() {
           
           {sent ? (
             <div className="text-center space-y-4">
-              <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-900">Check Your Inbox</h3>
               <p className="text-xs text-slate-500">
                 We sent a password reset link to <strong className="text-slate-800">{email}</strong>.
               </p>
-              <Link to="/login" className="inline-block py-2.5 px-6 bg-indigo-600 text-white font-bold text-xs rounded-xl shadow-md">
+              <Link to="/customer/login" className="inline-block py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition">
                 Return to Login
               </Link>
             </div>
@@ -59,14 +59,14 @@ export default function ForgotPasswordPage() {
                     placeholder="user@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg transition"
+                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/25 transition"
               >
                 Send Reset Link
               </button>
@@ -74,11 +74,10 @@ export default function ForgotPasswordPage() {
           )}
 
           <div className="text-center">
-            <Link to="/login" className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline">
+            <Link to="/customer/login" className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:underline">
               <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
             </Link>
           </div>
-
         </div>
       </div>
     </div>

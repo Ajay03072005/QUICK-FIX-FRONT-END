@@ -16,9 +16,9 @@ export default function BookingStepper({ currentStep = 1 }) {
         {/* Background Connecting Bar */}
         <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-200 -translate-y-1/2 z-0 hidden sm:block"></div>
 
-        {/* Dynamic Progress Fill */}
+        {/* Dynamic Progress Fill in Emerald */}
         <div
-          className="absolute top-1/2 left-0 h-1 bg-indigo-600 -translate-y-1/2 z-0 transition-all duration-500 hidden sm:block"
+          className="absolute top-1/2 left-0 h-1 bg-emerald-600 -translate-y-1/2 z-0 transition-all duration-500 hidden sm:block"
           style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
         ></div>
 
@@ -31,9 +31,9 @@ export default function BookingStepper({ currentStep = 1 }) {
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
                   isCompleted
-                    ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
                     : isCurrent
-                    ? 'bg-indigo-600 text-white ring-4 ring-indigo-100 shadow-md shadow-indigo-600/30'
+                    ? 'bg-emerald-600 text-white ring-4 ring-emerald-500/20 shadow-md shadow-emerald-600/30'
                     : 'bg-white text-slate-400 border-2 border-slate-200'
                 }`}
               >
@@ -41,7 +41,7 @@ export default function BookingStepper({ currentStep = 1 }) {
               </div>
               <span
                 className={`mt-2 text-xs font-semibold hidden md:block text-center ${
-                  isCurrent ? 'text-indigo-600 font-bold' : isCompleted ? 'text-slate-700' : 'text-slate-400'
+                  isCurrent ? 'text-emerald-700 font-bold' : isCompleted ? 'text-slate-700' : 'text-slate-400'
                 }`}
               >
                 {step.title}

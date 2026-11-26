@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { CheckCircle2, XCircle, ShieldCheck, ArrowLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, ShieldCheck, ArrowLeft, AlertCircle } from 'lucide-react';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
 import StarRating from '../../components/common/StarRating';
@@ -64,8 +64,8 @@ export default function ServiceDetailsPage() {
               The requested service is either unavailable or could not be loaded. Please browse available services.
             </p>
             <Link
-              to="/customer/find-service"
-              className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-md shadow-indigo-600/20"
+              to="/services"
+              className="inline-block px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition shadow-md shadow-emerald-600/20"
             >
               Browse All Services
             </Link>
@@ -108,110 +108,88 @@ export default function ServiceDetailsPage() {
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
       <Header />
 
-      <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 space-y-8">
-        <Link to="/services" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-indigo-600 transition">
+      <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 space-y-6">
+        <Link to="/services" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-emerald-700">
           <ArrowLeft className="w-4 h-4" /> Back to Services
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Main Service Details */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-6">
-                <div>
-                  <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg">
-                    {service.categoryName || 'Service'}
-                  </span>
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">
-                    {service.name || 'Home Service'}
-                  </h1>
-                </div>
-                <div className="text-right">
-                  <StarRating rating={service.rating ?? 4.8} reviewCount={service.reviewCount ?? 24} size="md" />
-                  <span className="text-xs text-slate-500 mt-1 block">Est. Duration: {service.estimatedDuration || '45 - 60 mins'}</span>
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-100">
+                  {service.categoryName || 'Home Service'}
+                </span>
+                <StarRating rating={service.rating} reviewCount={service.reviewCount} />
               </div>
 
-              <div className="space-y-3">
-                <h3 className="font-bold text-slate-900 text-base">Service Description</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {service.longDescription || service.shortDescription || 'Professional home service provided by verified local experts.'}
-                </p>
-              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{service.name}</h1>
+              <p className="text-slate-600 text-sm leading-relaxed">{service.longDescription || service.shortDescription}</p>
 
-              {/* What's Included */}
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" /> What is Included
+              <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex items-center gap-3">
+                <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0" />
+                <div className="text-xs">
+                  <span className="font-bold text-emerald-950 block">Quick-Fix Guaranteed Quality</span>
+                  <span className="text-emerald-800">Only verified local technicians, transparent pricing, and pay after completion.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Inclusions / Exclusions */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> What's Included
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {includedList.map((inc, i) => (
-                    <div key={i} className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-100 flex items-start gap-2 text-xs font-semibold text-emerald-900">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                      <span>{inc}</span>
-                    </div>
+                <ul className="space-y-2 text-xs text-slate-600">
+                  {includedList.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5 shrink-0" />
+                      <span>{item}</span>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
 
-              {/* What's Excluded */}
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                  <XCircle className="w-5 h-5 text-rose-500" /> What is Excluded
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <XCircle className="w-4 h-4 text-rose-500" /> What's Excluded
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {excludedList.map((exc, i) => (
-                    <div key={i} className="p-3 bg-rose-50/60 rounded-xl border border-rose-100 flex items-start gap-2 text-xs font-semibold text-rose-900">
-                      <XCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                      <span>{exc}</span>
-                    </div>
+                <ul className="space-y-2 text-xs text-slate-600">
+                  {excludedList.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 shrink-0" />
+                      <span>{item}</span>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             </div>
           </div>
 
-          {/* Pricing & Booking Card (Col 4) */}
-          <div className="lg:col-span-4 sticky top-24">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-lg space-y-6">
+          {/* Pricing & Booking Card */}
+          <div className="space-y-4">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-md space-y-5 sticky top-24">
               <div>
-                <span className="block text-xs font-bold text-slate-400 uppercase">Starting Service Price</span>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-extrabold text-indigo-600">₹{startingPrice}</span>
-                  <span className="text-xs text-slate-500 font-medium">+ transparent distance fare</span>
-                </div>
-              </div>
-
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2 text-xs text-slate-600">
-                <div className="flex justify-between font-semibold">
-                  <span>Base Inspection Rate</span>
-                  <span className="text-slate-900">₹{startingPrice}</span>
-                </div>
-                <div className="flex justify-between font-semibold">
-                  <span>Base Distance Rate</span>
-                  <span className="text-slate-900">₹{baseDistanceCharge}</span>
-                </div>
-                <p className="text-[11px] text-slate-400 pt-1">
-                  Exact distance fare calculated dynamically based on chosen nearby technician's live location (within 30 km).
-                </p>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Base Service Charge</span>
+                <span className="text-3xl font-black text-emerald-700">₹{startingPrice}</span>
+                <p className="text-[11px] text-slate-500 mt-1">Conveyance charge calculated based on exact technician distance.</p>
               </div>
 
               <button
-                type="button"
                 onClick={handleBookService}
-                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2"
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-emerald-600/25 transition active:scale-[0.99]"
               >
-                Proceed to Book Service <ChevronRight className="w-4 h-4" />
+                Book This Service Now
               </button>
 
-              <div className="flex items-center justify-center gap-2 text-xs font-medium text-slate-500 pt-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                Verified Technicians & Transparent Billing
+              <div className="pt-4 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5">
+                <p>✔ Pay online via UPI/Card or Cash on Doorstep</p>
+                <p>✔ Free cancellation before technician departure</p>
+                <p>✔ Live GPS tracking once en route</p>
               </div>
             </div>
           </div>
-
         </div>
       </main>
 

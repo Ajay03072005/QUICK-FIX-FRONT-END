@@ -32,7 +32,7 @@ export default function PriceBreakdown({
       <div className="pt-3 border-t border-slate-200 flex justify-between items-center">
         <div>
           <span className="block text-xs font-bold text-slate-400 uppercase">Estimated Total</span>
-          <span className="text-xl font-extrabold text-indigo-600">₹{amount(totalPrice)}</span>
+          <span className="text-xl font-extrabold text-emerald-700">₹{amount(totalPrice)}</span>
         </div>
         <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-lg border border-emerald-200 flex items-center gap-1">
           <ShieldCheck className="w-3.5 h-3.5" /> Transparent Pricing

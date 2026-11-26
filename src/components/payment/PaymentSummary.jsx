@@ -13,7 +13,7 @@ export default function PaymentSummary({ booking }) {
     <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm space-y-6">
       <div className="flex items-center justify-between pb-4 border-b border-slate-100">
         <div className="flex items-center gap-2.5">
-          <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
+          <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-2xl">
             <Receipt className="w-5 h-5" />
           </div>
           <div>
@@ -21,7 +21,7 @@ export default function PaymentSummary({ booking }) {
             <p className="text-xs text-slate-500">Trusted server-calculated bill</p>
           </div>
         </div>
-        <span className="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-xl">
+        <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-xl">
           ID: {booking.bookingUniqueId || booking.uniqueId}
         </span>
       </div>
@@ -30,7 +30,7 @@ export default function PaymentSummary({ booking }) {
       <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
         <div className="flex justify-between items-center text-xs">
           <span className="text-slate-500 font-medium flex items-center gap-1.5">
-            <Tag className="w-3.5 h-3.5 text-indigo-500" /> Service Requested
+            <Tag className="w-3.5 h-3.5 text-emerald-600" /> Service Requested
           </span>
           <span className="font-bold text-slate-900">{booking.serviceName || 'Home Service'}</span>
         </div>
@@ -38,7 +38,7 @@ export default function PaymentSummary({ booking }) {
         {booking.providerName && (
           <div className="flex justify-between items-center text-xs">
             <span className="text-slate-500 font-medium flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-indigo-500" /> Service Provider
+              <User className="w-3.5 h-3.5 text-emerald-600" /> Service Provider
             </span>
             <span className="font-bold text-slate-900">{booking.providerName}</span>
           </div>
@@ -47,7 +47,7 @@ export default function PaymentSummary({ booking }) {
         {booking.customerAddress && (
           <div className="flex justify-between items-center text-xs">
             <span className="text-slate-500 font-medium flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-indigo-500" /> Location ({distanceKm} km)
+              <MapPin className="w-3.5 h-3.5 text-emerald-600" /> Location ({distanceKm} km)
             </span>
             <span className="font-semibold text-slate-700 truncate max-w-[200px]">
               {booking.customerAddress}
@@ -75,7 +75,7 @@ export default function PaymentSummary({ booking }) {
             <span className="font-extrabold text-slate-900 text-lg">Total Amount</span>
             <p className="text-[11px] text-slate-400 font-medium">Inclusive of all taxes & doorstep delivery</p>
           </div>
-          <span className="text-2xl font-black text-indigo-600">₹{(Number(totalAmount) || 0).toFixed(2)}</span>
+          <span className="text-2xl font-black text-emerald-700">₹{(Number(totalAmount) || 0).toFixed(2)}</span>
         </div>
       </div>
 
