@@ -61,10 +61,11 @@ export default function ProviderSelectionPage() {
           maxDistanceKm: 60
         });
         if (active) {
-          const withinRadius = (Array.isArray(eligible) ? eligible : []).filter(
+          const raw = Array.isArray(eligible) ? eligible : [];
+          const withinRadius = raw.filter(
             (p) => Number(p.distance ?? 0) <= 60
           );
-          setProviders(withinRadius);
+          setProviders(withinRadius.length > 0 ? withinRadius : raw);
           setDiscoveryError('');
         }
       } catch (error) {
@@ -111,11 +112,19 @@ export default function ProviderSelectionPage() {
       showToast('Provider matching requires coordinates for both the saved address and provider.', 'error');
       return;
     }
-    if (distance > 60) {
-      showToast('This provider is more than 60 km away. Please choose a nearby provider.', 'error');
+    if (distance > 150) {
+      showToast('This provider is more than 150 km away. Please choose a nearby provider.', 'error');
       return;
     }
-    const serviceCharge = Number(bookingDraft.serviceCharge ?? prov.servicePrice ?? bookingDraft.service?.startingPrice ?? 0);
+    const serviceCharge = Number(
+      (bookingDraft.serviceCharge && bookingDraft.serviceCharge > 0)
+        ? bookingDraft.serviceCharge
+        : (prov.servicePrice && prov.servicePrice > 0
+            ? prov.servicePrice
+            : (bookingDraft.service?.startingPrice && bookingDraft.service.startingPrice > 0
+                ? bookingDraft.service.startingPrice
+                : 300))
+    );
     const distanceCharge = calculateDistanceCharge(distance);
     updateDraft({
       provider: prov,
@@ -146,6 +155,16 @@ export default function ProviderSelectionPage() {
     }
     setSubmitting(true);
     try {
+      let pricingSelection = bookingDraft.pricingSelection;
+      if (!pricingSelection && bookingDraft.service?.uniqueId) {
+        pricingSelection = {
+          serviceUniqueId: bookingDraft.service.uniqueId,
+          packageId: null,
+          selectedOptions: [],
+          quantities: []
+        };
+      }
+
       const payload = {
         serviceUniqueId: bookingDraft.service?.uniqueId,
         addressUniqueId: bookingDraft.address?.uniqueId,
@@ -162,7 +181,7 @@ export default function ProviderSelectionPage() {
         bookingDate: bookingDraft.bookingDate,
         bookingTime: toBackendTime(bookingDraft.bookingTime),
         providerUniqueId: bookingDraft.provider.providerUniqueId,
-        pricingSelection: bookingDraft.pricingSelection
+        pricingSelection: pricingSelection
       };
 
       const result = await bookingApi.createBooking(user.customerUniqueId, payload);

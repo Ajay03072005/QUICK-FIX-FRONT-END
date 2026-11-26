@@ -2,20 +2,32 @@ import axiosInstance from './axiosInstance';
 
 export const adminApi = {
   getAuditLogs: async () => {
-    const res = await axiosInstance.get('/admin/audit-logs');
-    return res.data || [];
+    try {
+      const res = await axiosInstance.get('/admin/audit-logs');
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [];
+    }
   },
 
   logAction: async ({ actor, action, targetType, targetId, reason }) => {
-    const res = await axiosInstance.post('/admin/audit-logs', null, {
-      params: { actor, action, targetType, targetId, reason }
-    });
-    return res.data;
+    try {
+      const res = await axiosInstance.post('/admin/audit-logs', null, {
+        params: { actor, action, targetType, targetId, reason }
+      });
+      return res.data;
+    } catch (e) {
+      return null;
+    }
   },
 
   getAllProviders: async () => {
-    const res = await axiosInstance.get('/providers');
-    return res.data || [];
+    try {
+      const res = await axiosInstance.get('/providers');
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [];
+    }
   },
 
   updateDocumentStatus: async (documentId, status) => {
@@ -26,13 +38,21 @@ export const adminApi = {
   },
 
   getAllBookings: async () => {
-    const res = await axiosInstance.get('/bookings');
-    return res.data || [];
+    try {
+      const res = await axiosInstance.get('/bookings');
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [];
+    }
   },
 
   getAllLedgerEntries: async () => {
-    const res = await axiosInstance.get('/finance/ledger');
-    return res.data || [];
+    try {
+      const res = await axiosInstance.get('/finance/ledger');
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [];
+    }
   },
 
   createPayout: async (providerUniqueId, amount) => {
@@ -43,10 +63,14 @@ export const adminApi = {
   },
 
   getServiceApplications: async (status) => {
-    const res = await axiosInstance.get('/admin/service-applications', {
-      params: status ? { status } : {}
-    });
-    return res.data || [];
+    try {
+      const res = await axiosInstance.get('/admin/service-applications', {
+        params: status ? { status } : {}
+      });
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [];
+    }
   },
 
   reviewServiceApplication: async (uniqueId, reviewPayload) => {

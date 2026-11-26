@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Wrench, ShieldCheck, Mail, Phone, MapPin, Heart, ArrowUpRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Footer() {
+  const { userRole } = useAuth();
   return (
     <footer className="bg-[#14213d] text-white border-t border-slate-800 pt-16 pb-12 font-sans">
       <div className="container mx-auto px-4 lg:px-8 space-y-12">
@@ -57,7 +59,12 @@ export default function Footer() {
               <li className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-blue-400" /> +91 98765 43210</li>
               <li className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-blue-400" /> support@quixfix.local</li>
               <li className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-blue-400" /> Coimbatore, Tamil Nadu</li>
-              <li className="pt-2"><Link to="/support" className="hover:text-white transition">Customer Support Desk</Link></li>
+              <li className="pt-2 flex items-center justify-between">
+                <Link to="/support" className="hover:text-white transition">Customer Support Desk</Link>
+                {userRole === 'ADMIN' && (
+                  <Link to="/admin" className="text-cyan-400 font-bold hover:underline">Admin Console</Link>
+                )}
+              </li>
             </ul>
           </div>
 

@@ -7,11 +7,11 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
   const [currentCity, setCurrentCity] = useState('Coimbatore, TN');
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, userRole, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isCustomer = !location.pathname.startsWith('/provider');
+  const isCustomer = userRole === 'CUSTOMER' || !location.pathname.startsWith('/provider');
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -21,6 +21,7 @@ export default function Header() {
     { name: 'How It Works', path: '/#how-it-works' },
     ...(isAuthenticated && isCustomer ? [{ name: 'My Bookings', path: '/customer/bookings' }] : []),
     ...(isAuthenticated && !isCustomer ? [{ name: 'Provider Hub', path: '/provider/dashboard' }] : []),
+    ...(userRole === 'ADMIN' ? [{ name: 'Admin Console', path: '/admin' }] : []),
   ];
 
   const popularLocations = [

@@ -9,6 +9,7 @@ import { useBooking } from '../../context/BookingContext';
 import { customerApi } from '../../api/customerApi';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
+import { serviceApi } from '../../api/serviceApi';
 import { geocodeAddress, getCurrentCoordinates, reverseGeocodeCoordinates } from '../../utils/addressGeocoding';
 
 export default function SelectAddressPage() {
@@ -117,6 +118,42 @@ export default function SelectAddressPage() {
       setLocatingAddress(false);
     }
   };
+
+  // Auto-resolve dynamic service pricing if service is set but charge is 0 or missing
+  useEffect(() => {
+    if (bookingDraft.service?.uniqueId && (!bookingDraft.serviceCharge || Number(bookingDraft.serviceCharge) <= 0 || !bookingDraft.pricingSelection)) {
+      serviceApi.getPricingConfig(bookingDraft.service.uniqueId)
+        .then(config => {
+          if (!config) return;
+          const initialOpts = [];
+          if (Array.isArray(config.optionGroups)) {
+            config.optionGroups.forEach(grp => {
+              if (Array.isArray(grp.options) && grp.options.length > 0 && grp.isRequired) {
+                initialOpts.push({ groupId: grp.id, optionIds: [grp.options[0].id] });
+              }
+            });
+          }
+          const defaultPkgId = Array.isArray(config.packages) && config.packages.length > 0 ? config.packages[0].id : null;
+          const payload = {
+            serviceUniqueId: bookingDraft.service.uniqueId,
+            packageId: defaultPkgId,
+            selectedOptions: initialOpts,
+            quantities: []
+          };
+          return serviceApi.calculatePrice(payload).then(calc => {
+            const subtotal = calc?.subtotal != null && Number(calc.subtotal) > 0
+              ? Number(calc.subtotal)
+              : (Number(bookingDraft.service.startingPrice) > 0 ? Number(bookingDraft.service.startingPrice) : 300);
+            updateDraft({
+              serviceCharge: subtotal,
+              pricingSelection: payload,
+              priceBreakdown: calc?.breakdown || []
+            });
+          });
+        })
+        .catch(err => console.warn('Could not auto-calculate pricing in SelectAddressPage:', err));
+    }
+  }, [bookingDraft.service?.uniqueId]);
 
   const timeSlots = [
     '09:00 AM - 10:00 AM',

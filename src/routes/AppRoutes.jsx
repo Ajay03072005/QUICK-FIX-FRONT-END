@@ -65,6 +65,14 @@ function ProtectedRoute({ children, role }) {
   return children;
 }
 
+function AdminRoute({ children }) {
+  const { userRole, isAuthenticated } = useAuth();
+  if (isAuthenticated && userRole === 'CUSTOMER') {
+    return <Navigate to="/customer/dashboard" replace />;
+  }
+  return children;
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -82,7 +90,8 @@ export default function AppRoutes() {
       <Route path="/customer/register" element={<RegisterPage />} />
       <Route path="/provider/login" element={<LoginPage />} />
       <Route path="/provider/register" element={<RegisterPage />} />
-      <Route path="/admin" element={<ProtectedRoute role={['ADMIN']}><AdminPortalPage /></ProtectedRoute>} />
+      <Route path="/admin" element={<AdminRoute><AdminPortalPage /></AdminRoute>} />
+      <Route path="/admin/profile" element={<AdminRoute><AdminPortalPage defaultTab="admin-profile" /></AdminRoute>} />
       <Route path="/support" element={<ProtectedRoute role={['SUPPORT', 'ADMIN']}><SupportPortalPage /></ProtectedRoute>} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
