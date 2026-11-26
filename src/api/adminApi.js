@@ -40,5 +40,27 @@ export const adminApi = {
       params: { amount }
     });
     return res.data;
+  },
+
+  getServiceApplications: async (status) => {
+    const res = await axiosInstance.get('/admin/service-applications', {
+      params: status ? { status } : {}
+    });
+    return res.data || [];
+  },
+
+  reviewServiceApplication: async (uniqueId, reviewPayload) => {
+    const res = await axiosInstance.put(`/admin/service-applications/${uniqueId}/review`, reviewPayload);
+    return res.data;
+  },
+
+  getServiceGuidance: async (serviceUniqueId) => {
+    const res = await axiosInstance.get(`/admin/guidance/${serviceUniqueId}`);
+    return res.data;
+  },
+
+  saveServiceGuidance: async (guidancePayload) => {
+    const res = await axiosInstance.post('/admin/guidance', guidancePayload);
+    return res.data;
   }
 };

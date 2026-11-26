@@ -14,14 +14,17 @@ export const BookingProvider = ({ children }) => {
   const updateDraft = useCallback((fields) => {
     setBookingDraft(prev => {
       const updated = { ...prev, ...fields };
-      const sCharge = updated.service?.startingPrice ?? updated.serviceCharge;
+      // Keep authoritative calculated serviceCharge from dynamic options/packages, falling back to startingPrice
+      const sCharge = fields.serviceCharge !== undefined
+        ? fields.serviceCharge
+        : (updated.serviceCharge != null ? updated.serviceCharge : (updated.service?.startingPrice ?? 0));
       const dKm = updated.provider?.distance ?? updated.distanceKm;
       const dCharge = updated.provider?.distanceCharge ?? updated.distanceCharge;
       const nextDraft = {
         ...updated,
         serviceCharge: sCharge,
         distanceCharge: dCharge,
-        totalPrice: sCharge != null && dCharge != null ? sCharge + dCharge : undefined
+        totalPrice: sCharge != null ? (dCharge != null ? sCharge + dCharge : sCharge) : undefined
       };
       sessionStorage.setItem('quickfix_booking_draft', JSON.stringify(nextDraft));
       return nextDraft;

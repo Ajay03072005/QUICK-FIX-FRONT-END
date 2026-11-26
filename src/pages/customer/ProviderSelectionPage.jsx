@@ -58,11 +58,11 @@ export default function ProviderSelectionPage() {
           latitude: bookingDraft.address?.latitude,
           longitude: bookingDraft.address?.longitude,
           addressUniqueId: bookingDraft.address?.uniqueId,
-          maxDistanceKm: 30
+          maxDistanceKm: 60
         });
         if (active) {
           const withinRadius = (Array.isArray(eligible) ? eligible : []).filter(
-            (p) => Number(p.distance ?? 0) <= 30
+            (p) => Number(p.distance ?? 0) <= 60
           );
           setProviders(withinRadius);
           setDiscoveryError('');
@@ -111,11 +111,11 @@ export default function ProviderSelectionPage() {
       showToast('Provider matching requires coordinates for both the saved address and provider.', 'error');
       return;
     }
-    if (distance > 30) {
-      showToast('This provider is more than 30 km away. Please choose a provider within 30 km.', 'error');
+    if (distance > 60) {
+      showToast('This provider is more than 60 km away. Please choose a nearby provider.', 'error');
       return;
     }
-    const serviceCharge = Number(prov.servicePrice ?? bookingDraft.service?.startingPrice ?? 0);
+    const serviceCharge = Number(bookingDraft.serviceCharge ?? prov.servicePrice ?? bookingDraft.service?.startingPrice ?? 0);
     const distanceCharge = calculateDistanceCharge(distance);
     updateDraft({
       provider: prov,
@@ -229,7 +229,9 @@ export default function ProviderSelectionPage() {
                 )}
                 {providers.map((prov) => {
                   const providerDistance = Number(prov.distance ?? calculateDistance(bookingDraft.address, prov));
-                  const providerTotal = Number(prov.totalAmount ?? ((bookingDraft.service?.startingPrice || 0) + calculateDistanceCharge(providerDistance)));
+                  const serviceCharge = Number(bookingDraft.serviceCharge ?? prov.servicePrice ?? bookingDraft.service?.startingPrice ?? 0);
+                  const distanceCharge = calculateDistanceCharge(providerDistance);
+                  const providerTotal = serviceCharge + distanceCharge;
 
                   return (
                     <div

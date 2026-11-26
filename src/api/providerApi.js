@@ -98,6 +98,34 @@ export const providerApi = {
     return res.data;
   },
 
+  getCatalogueGuidance: async (providerUniqueId) => {
+    const res = await axiosInstance.get('/guidance/catalogue', {
+      params: { providerUniqueId }
+    });
+    return res.data || [];
+  },
+
+  getServiceGuidance: async (serviceUniqueId, providerUniqueId) => {
+    const res = await axiosInstance.get(`/guidance/${serviceUniqueId}`, {
+      params: { providerUniqueId }
+    });
+    return res.data;
+  },
+
+  submitServiceApplication: async (providerUniqueId, payload) => {
+    const res = await axiosInstance.post('/provider/service-applications', payload, {
+      params: { providerUniqueId }
+    });
+    return res.data;
+  },
+
+  getMyApplications: async (providerUniqueId) => {
+    const res = await axiosInstance.get('/provider/service-applications/my', {
+      params: { providerUniqueId }
+    });
+    return res.data || [];
+  },
+
   getNearbyProviders: async ({ latitude, longitude, radiusKm = 25, serviceType } = {}) => {
     const origin = { latitude: Number(latitude), longitude: Number(longitude) };
     if (!Number.isFinite(origin.latitude) || !Number.isFinite(origin.longitude)) return [];

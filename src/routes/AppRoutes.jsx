@@ -38,6 +38,8 @@ import ActiveServicePage from '../pages/provider/ActiveServicePage';
 import ServiceHistoryPage from '../pages/provider/ServiceHistoryPage';
 import ProviderProfilePage from '../pages/provider/ProviderProfilePage';
 import ProviderServicesPage from '../pages/provider/ProviderServicesPage';
+import ProviderServiceDiscoveryPage from '../pages/provider/ProviderServiceDiscoveryPage';
+import ProviderServiceGuidancePage from '../pages/provider/ProviderServiceGuidancePage';
 import ProviderAvailabilityPage from '../pages/provider/ProviderAvailabilityPage';
 import ProviderNotificationsPage from '../pages/provider/ProviderNotificationsPage';
 
@@ -110,6 +112,8 @@ export default function AppRoutes() {
       <Route path="/provider/history" element={<ProtectedRoute role="PROVIDER"><ServiceHistoryPage /></ProtectedRoute>} />
       <Route path="/provider/profile" element={<ProtectedRoute role="PROVIDER"><ProviderProfilePage /></ProtectedRoute>} />
       <Route path="/provider/services" element={<ProtectedRoute role="PROVIDER"><ProviderServicesPage /></ProtectedRoute>} />
+      <Route path="/provider/services/discover" element={<ProtectedRoute role="PROVIDER"><ProviderServiceDiscoveryPage /></ProtectedRoute>} />
+      <Route path="/provider/services/:serviceUniqueId/guidance" element={<ProtectedRoute role="PROVIDER"><ProviderServiceGuidancePage /></ProtectedRoute>} />
       <Route path="/provider/availability" element={<ProtectedRoute role="PROVIDER"><ProviderAvailabilityPage /></ProtectedRoute>} />
       <Route path="/provider/notifications" element={<ProtectedRoute role="PROVIDER"><ProviderNotificationsPage /></ProtectedRoute>} />
 

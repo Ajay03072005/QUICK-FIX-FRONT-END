@@ -17,7 +17,12 @@ import {
   RefreshCw,
   Eye,
   Send,
-  Layers
+  Layers,
+  Briefcase,
+  BookOpen,
+  Check,
+  X,
+  Sparkles
 } from 'lucide-react';
 import { adminApi } from '../../api/adminApi';
 import { serviceApi } from '../../api/serviceApi';
@@ -33,9 +38,21 @@ export default function AdminPortalPage() {
   const [ledgerEntries, setLedgerEntries] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [services, setServices] = useState([]);
+  const [applications, setApplications] = useState([]);
 
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState('');
+  const [appStatusFilter, setAppStatusFilter] = useState('ALL');
+
+  // Application Review Modal
+  const [reviewModal, setReviewModal] = useState({ open: false, app: null, action: '', reason: '' });
+
+  // Service Guidance Management
+  const [selectedServiceForGuidance, setSelectedServiceForGuidance] = useState('');
+  const [guidanceForm, setGuidanceForm] = useState(null);
+  const [loadingGuidance, setLoadingGuidance] = useState(false);
+  const [savingGuidance, setSavingGuidance] = useState(false);
+  const [guidanceMsg, setGuidanceMsg] = useState('');
 
   // Payout Form Modal
   const [selectedProviderForPayout, setSelectedProviderForPayout] = useState('');
@@ -46,12 +63,13 @@ export default function AdminPortalPage() {
     setLoading(true);
     setError(null);
     try {
-      const [provRes, bookRes, ledgerRes, auditRes, srvRes] = await Promise.allSettled([
+      const [provRes, bookRes, ledgerRes, auditRes, srvRes, appRes] = await Promise.allSettled([
         adminApi.getAllProviders(),
         adminApi.getAllBookings(),
         adminApi.getAllLedgerEntries(),
         adminApi.getAuditLogs(),
-        serviceApi.getAllServices()
+        serviceApi.getAllServices(),
+        adminApi.getServiceApplications()
       ]);
 
       if (provRes.status === 'fulfilled') setProviders(provRes.value || []);
@@ -59,11 +77,106 @@ export default function AdminPortalPage() {
       if (ledgerRes.status === 'fulfilled') setLedgerEntries(ledgerRes.value || []);
       if (auditRes.status === 'fulfilled') setAuditLogs(auditRes.value || []);
       if (srvRes.status === 'fulfilled') setServices(srvRes.value || []);
+      if (appRes.status === 'fulfilled') setApplications(appRes.value || []);
     } catch (err) {
       console.error("Failed to load admin portal data:", err);
       setError("Failed to synchronize admin console data.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApproveApplication = async (app) => {
+    try {
+      await adminApi.reviewServiceApplication(app.uniqueId, { status: 'APPROVED' });
+      await adminApi.logAction({
+        actor: 'ADMIN_CONSOLE',
+        action: 'APPROVE_SERVICE_APPLICATION',
+        targetType: 'PROVIDER_SERVICE_APPLICATION',
+        targetId: app.uniqueId,
+        reason: `Approved provider ${app.providerName} for service ${app.serviceName}`
+      });
+      fetchData();
+    } catch (err) {
+      alert('Failed to approve application: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleReviewActionSubmit = async (e) => {
+    e.preventDefault();
+    if (!reviewModal.app) return;
+    try {
+      const targetStatus = reviewModal.action === 'REJECT' ? 'REJECTED' : 'MORE_INFO_REQUESTED';
+      await adminApi.reviewServiceApplication(reviewModal.app.uniqueId, {
+        status: targetStatus,
+        rejectionReason: reviewModal.action === 'REJECT' ? reviewModal.reason : null,
+        adminNotes: reviewModal.reason
+      });
+      await adminApi.logAction({
+        actor: 'ADMIN_CONSOLE',
+        action: `${targetStatus}_SERVICE_APPLICATION`,
+        targetType: 'PROVIDER_SERVICE_APPLICATION',
+        targetId: reviewModal.app.uniqueId,
+        reason: reviewModal.reason
+      });
+      setReviewModal({ open: false, app: null, action: '', reason: '' });
+      fetchData();
+    } catch (err) {
+      alert('Failed to update application review: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleSelectServiceForGuidance = async (serviceUniqueId) => {
+    setSelectedServiceForGuidance(serviceUniqueId);
+    if (!serviceUniqueId) {
+      setGuidanceForm(null);
+      return;
+    }
+    setLoadingGuidance(true);
+    setGuidanceMsg('');
+    try {
+      const data = await adminApi.getServiceGuidance(serviceUniqueId);
+      setGuidanceForm(data);
+    } catch (err) {
+      console.error('Error fetching guidance for edit:', err);
+    } finally {
+      setLoadingGuidance(false);
+    }
+  };
+
+  const handleSaveGuidance = async (e) => {
+    e.preventDefault();
+    if (!guidanceForm) return;
+    setSavingGuidance(true);
+    setGuidanceMsg('');
+    try {
+      await adminApi.saveServiceGuidance({
+        serviceUniqueId: guidanceForm.serviceUniqueId,
+        overview: guidanceForm.overview,
+        inclusions: guidanceForm.inclusions,
+        exclusions: guidanceForm.exclusions,
+        responsibilities: guidanceForm.responsibilities,
+        minExperienceYears: Number(guidanceForm.minExperienceYears || 1),
+        estimatedDuration: guidanceForm.estimatedDuration,
+        estimatedEarningMin: Number(guidanceForm.estimatedEarningMin || 0),
+        estimatedEarningMax: Number(guidanceForm.estimatedEarningMax || 0),
+        earningBasis: guidanceForm.earningBasis,
+        safetyInstructions: guidanceForm.safetyInstructions,
+        eligibilityCriteria: guidanceForm.eligibilityCriteria,
+        active: true
+      });
+      await adminApi.logAction({
+        actor: 'ADMIN_CONSOLE',
+        action: 'UPDATE_SERVICE_GUIDANCE',
+        targetType: 'SERVICE_GUIDANCE',
+        targetId: guidanceForm.serviceUniqueId,
+        reason: `Updated onboarding guidance for ${guidanceForm.serviceName}`
+      });
+      setGuidanceMsg('Service guidance updated successfully!');
+    } catch (err) {
+      setGuidanceMsg('Failed to update guidance: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSavingGuidance(false);
     }
   };
 
@@ -147,6 +260,8 @@ export default function AdminPortalPage() {
           {[
             { id: 'overview', label: 'Overview & Metrics', icon: Activity },
             { id: 'providers', label: `Provider Queue (${pendingVerifications})`, icon: Wrench },
+            { id: 'applications', label: `Applications (${applications.filter(a => String(a.status).toUpperCase() === 'PENDING').length})`, icon: Briefcase },
+            { id: 'guidance', label: 'Service Guidance', icon: BookOpen },
             { id: 'bookings', label: `Bookings (${bookings.length})`, icon: CalendarCheck },
             { id: 'services', label: `Services (${services.length})`, icon: Layers },
             { id: 'finance', label: 'Finance & Ledger', icon: DollarSign },
@@ -551,6 +666,370 @@ export default function AdminPortalPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Service Applications */}
+        {activeTab === 'applications' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold">Provider Service Applications</h2>
+                <p className="text-xs text-slate-400">Review trade qualifications, verified experience, and approve service authorizations.</p>
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex items-center gap-2">
+                {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setAppStatusFilter(st)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                      appStatusFilter === st
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                        : 'bg-slate-900 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {st === 'ALL' ? 'All Applications' : st}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-slate-800 bg-slate-900/80 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <tr>
+                      <th className="p-4">Provider Details</th>
+                      <th className="p-4">Applied Service</th>
+                      <th className="p-4">Experience & Coverage</th>
+                      <th className="p-4">Certifications / Notes</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {applications
+                      .filter(a => appStatusFilter === 'ALL' || String(a.status).toUpperCase() === appStatusFilter)
+                      .map((app) => (
+                        <tr key={app.uniqueId} className="hover:bg-slate-800/40">
+                          <td className="p-4">
+                            <div className="font-bold text-white">{app.providerName || 'Provider'}</div>
+                            <div className="text-[11px] text-slate-400">{app.providerPhone || 'No phone'}</div>
+                            <div className="text-[10px] text-cyan-400 font-mono">{app.providerUniqueId}</div>
+                          </td>
+                          <td className="p-4">
+                            <div className="font-bold text-white">{app.serviceName}</div>
+                            <div className="text-[10px] text-slate-400 uppercase">{app.serviceType}</div>
+                          </td>
+                          <td className="p-4">
+                            <div className="font-semibold text-slate-200">{app.experienceYears || 1} Years Experience</div>
+                            <div className="text-[11px] text-slate-400">Area: {app.serviceArea || 'General'}</div>
+                          </td>
+                          <td className="p-4 max-w-xs">
+                            {app.certifications && (
+                              <div className="text-slate-300 font-medium truncate">Cert: {app.certifications}</div>
+                            )}
+                            {app.notes && (
+                              <div className="text-[11px] text-slate-400 truncate">Note: {app.notes}</div>
+                            )}
+                            {app.rejectionReason && (
+                              <div className="text-[11px] text-rose-400 font-bold mt-1">Rejection: {app.rejectionReason}</div>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                              app.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                              app.status === 'PENDING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                              'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                            }`}>
+                              {app.status === 'APPROVED' ? <CheckCircle className="h-3 w-3" /> :
+                               app.status === 'PENDING' ? <Clock className="h-3 w-3" /> :
+                               <XCircle className="h-3 w-3" />}
+                              {app.status}
+                            </span>
+                          </td>
+                          <td className="p-4 text-right">
+                            {app.status === 'PENDING' ? (
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleApproveApplication(app)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition"
+                                >
+                                  <Check className="w-3.5 h-3.5" /> Approve
+                                </button>
+                                <button
+                                  onClick={() => setReviewModal({ open: true, app, action: 'REJECT', reason: '' })}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 font-bold text-xs transition"
+                                >
+                                  <X className="w-3.5 h-3.5" /> Reject
+                                </button>
+                                <button
+                                  onClick={() => setReviewModal({ open: true, app, action: 'MORE_INFO', reason: '' })}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white border border-amber-500/30 font-bold text-xs transition"
+                                >
+                                  Request Info
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setReviewModal({ open: true, app, action: 'REJECT', reason: app.rejectionReason || '' })}
+                                className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-white"
+                              >
+                                Modify Review
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    {applications.length === 0 && (
+                      <tr>
+                        <td colSpan="6" className="p-8 text-center text-slate-500">
+                          No provider service applications submitted yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Service Guidance Management */}
+        {activeTab === 'guidance' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold">Service Guidance & Onboarding Configuration</h2>
+                <p className="text-xs text-slate-400">Configure expectations, safety rules, required tools, and non-guaranteed provider earning guidelines for catalogue services.</p>
+              </div>
+
+              {/* Service Select Dropdown */}
+              <div className="w-full sm:w-72">
+                <select
+                  value={selectedServiceForGuidance}
+                  onChange={(e) => handleSelectServiceForGuidance(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-cyan-500"
+                >
+                  <option value="">-- Choose a Service to Edit Guidance --</option>
+                  {services.map((s) => (
+                    <option key={s.uniqueId} value={s.uniqueId}>
+                      {s.name} ({s.pricingModel || 'FIXED'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {guidanceMsg && (
+              <div className="p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" /> {guidanceMsg}
+              </div>
+            )}
+
+            {loadingGuidance ? (
+              <div className="p-12 text-center text-slate-400 text-xs font-bold">
+                Loading service guidance details...
+              </div>
+            ) : !guidanceForm ? (
+              <div className="bg-slate-900/60 p-12 rounded-3xl border border-slate-800 text-center space-y-3">
+                <BookOpen className="w-10 h-10 text-slate-600 mx-auto" />
+                <h3 className="text-sm font-bold text-slate-300">Select a Service from the Dropdown</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Pick any catalogue service above to view and configure its responsibilities, inclusions, exclusions, and provider earning brackets.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveGuidance} className="bg-slate-900/60 p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6 text-xs">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">{guidanceForm.serviceName} Guidance</h3>
+                    <p className="text-xs text-slate-400">Service Type: {guidanceForm.serviceType} • Model: {guidanceForm.pricingModel}</p>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={savingGuidance}
+                    className="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs transition shadow-lg shadow-cyan-600/30 flex items-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" /> {savingGuidance ? 'Saving...' : 'Save Guidance Changes'}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block font-bold text-slate-300 uppercase mb-1">Service Overview</label>
+                    <textarea
+                      rows="3"
+                      value={guidanceForm.overview || ''}
+                      onChange={(e) => setGuidanceForm({ ...guidanceForm, overview: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-300 uppercase mb-1">Step-by-Step Responsibilities</label>
+                    <textarea
+                      rows="3"
+                      value={guidanceForm.responsibilities || ''}
+                      onChange={(e) => setGuidanceForm({ ...guidanceForm, responsibilities: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-300 uppercase mb-1">Inclusions (What's included)</label>
+                    <textarea
+                      rows="3"
+                      value={guidanceForm.inclusions || ''}
+                      onChange={(e) => setGuidanceForm({ ...guidanceForm, inclusions: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-300 uppercase mb-1">Exclusions (What's NOT included)</label>
+                    <textarea
+                      rows="3"
+                      value={guidanceForm.exclusions || ''}
+                      onChange={(e) => setGuidanceForm({ ...guidanceForm, exclusions: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-300 uppercase mb-1">Safety Precautions</label>
+                    <textarea
+                      rows="3"
+                      value={guidanceForm.safetyInstructions || ''}
+                      onChange={(e) => setGuidanceForm({ ...guidanceForm, safetyInstructions: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-300 uppercase mb-1">Eligibility Criteria</label>
+                    <textarea
+                      rows="3"
+                      value={guidanceForm.eligibilityCriteria || ''}
+                      onChange={(e) => setGuidanceForm({ ...guidanceForm, eligibilityCriteria: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-200"
+                    />
+                  </div>
+                </div>
+
+                {/* Earning & Duration Metrics */}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-800">
+                  <div>
+                    <label className="block font-bold text-slate-300 uppercase mb-1">Min Earning (₹)</label>
+                    <input
+                      type="number"
+                      value={guidanceForm.estimatedEarningMin || 0}
+                      onChange={(e) => setGuidanceForm({ ...guidanceForm, estimatedEarningMin: e.target.value })}
+                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-300 uppercase mb-1">Max Earning (₹)</label>
+                    <input
+                      type="number"
+                      value={guidanceForm.estimatedEarningMax || 0}
+                      onChange={(e) => setGuidanceForm({ ...guidanceForm, estimatedEarningMax: e.target.value })}
+                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-300 uppercase mb-1">Min Experience (Yrs)</label>
+                    <input
+                      type="number"
+                      value={guidanceForm.minExperienceYears || 1}
+                      onChange={(e) => setGuidanceForm({ ...guidanceForm, minExperienceYears: e.target.value })}
+                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-300 uppercase mb-1">Estimated Duration</label>
+                    <input
+                      type="text"
+                      value={guidanceForm.estimatedDuration || ''}
+                      onChange={(e) => setGuidanceForm({ ...guidanceForm, estimatedDuration: e.target.value })}
+                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <button
+                    type="submit"
+                    disabled={savingGuidance}
+                    className="px-6 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs transition shadow-lg shadow-cyan-600/30 flex items-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" /> {savingGuidance ? 'Saving...' : 'Save Guidance Changes'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* Review Action Modal */}
+        {reviewModal.open && (
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 className="text-base font-bold text-white">
+                  {reviewModal.action === 'REJECT' ? 'Reject Application' : 'Request Additional Details'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setReviewModal({ open: false, app: null, action: '', reason: '' })}
+                  className="p-1 text-slate-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleReviewActionSubmit} className="space-y-4 text-xs">
+                <div>
+                  <p className="text-slate-400 mb-2">
+                    Provider: <strong className="text-white">{reviewModal.app?.providerName}</strong> ({reviewModal.app?.serviceName})
+                  </p>
+                  <label className="block font-bold text-slate-300 uppercase mb-1">
+                    {reviewModal.action === 'REJECT' ? 'Rejection Reason (Visible to Provider) *' : 'Instructions / Missing Information *'}
+                  </label>
+                  <textarea
+                    rows="3"
+                    required
+                    placeholder="Enter clear feedback for the provider..."
+                    value={reviewModal.reason}
+                    onChange={(e) => setReviewModal({ ...reviewModal, reason: e.target.value })}
+                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-200"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setReviewModal({ open: false, app: null, action: '', reason: '' })}
+                    className="px-4 py-2 rounded-xl border border-slate-800 text-slate-300 hover:bg-slate-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className={`px-4 py-2 rounded-xl text-white font-bold ${
+                      reviewModal.action === 'REJECT' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-amber-600 hover:bg-amber-700'
+                    }`}
+                  >
+                    {reviewModal.action === 'REJECT' ? 'Confirm Rejection' : 'Send Request'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

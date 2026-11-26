@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BriefcaseBusiness, CalendarDays, ClipboardList, Clock3, Settings, UserRound, Wrench, LogOut } from 'lucide-react';
+import { BriefcaseBusiness, CalendarDays, ClipboardList, Clock3, Settings, UserRound, Wrench, LogOut, Compass } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const links = [
@@ -9,7 +9,8 @@ const links = [
   { label: 'Active Job', path: '/provider/active-service', icon: Clock3 },
   { label: 'History', path: '/provider/history', icon: CalendarDays },
   { label: 'Availability', path: '/provider/availability', icon: Settings },
-  { label: 'Services', path: '/provider/services', icon: Wrench },
+  { label: 'My Services', path: '/provider/services', icon: Wrench },
+  { label: 'Explore Services', path: '/provider/services/discover', icon: Compass },
   { label: 'Profile', path: '/provider/profile', icon: UserRound },
 ];
 

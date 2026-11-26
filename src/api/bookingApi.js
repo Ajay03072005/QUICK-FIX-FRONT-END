@@ -27,7 +27,8 @@ export const bookingApi = {
       recipientPhone: bookingRequest.recipientPhone,
       bookingDate: bookingRequest.bookingDate,
       bookingTime: bookingRequest.bookingTime,
-      providerUniqueId: bookingRequest.providerUniqueId || null
+      providerUniqueId: bookingRequest.providerUniqueId || null,
+      pricingSelection: bookingRequest.pricingSelection || null
     };
 
     const res = await axiosInstance.post('/bookings', payload, {
