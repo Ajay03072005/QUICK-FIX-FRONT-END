@@ -161,7 +161,8 @@ export default function ProviderSelectionPage() {
         recipientPhone: user?.phone,
         bookingDate: bookingDraft.bookingDate,
         bookingTime: toBackendTime(bookingDraft.bookingTime),
-        providerUniqueId: bookingDraft.provider.providerUniqueId
+        providerUniqueId: bookingDraft.provider.providerUniqueId,
+        pricingSelection: bookingDraft.pricingSelection
       };
 
       const result = await bookingApi.createBooking(user.customerUniqueId, payload);
@@ -184,7 +185,7 @@ export default function ProviderSelectionPage() {
           <button
             type="button"
             onClick={() => stepSubState === 'REVIEW' ? setStepSubState('CHOICE') : navigate(missingService ? '/customer/find-service' : '/customer/select-address')}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-xs transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-xs transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
           >
             <ArrowLeft className="h-4 w-4" />
             {stepSubState === 'REVIEW' ? 'Back to providers' : missingService ? 'Back to services' : 'Back to address & time'}
@@ -211,7 +212,7 @@ export default function ProviderSelectionPage() {
                 </div>
 
                 {discoveryError && <div className="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 sm:flex-row sm:items-center sm:justify-between"><p>{discoveryError}</p><button type="button" onClick={recoverFromDiscoveryError} className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-bold text-rose-700 shadow-sm hover:bg-rose-100">{!user?.customerUniqueId ? 'Customer sign in' : missingService ? 'Choose a service' : (missingAddress || missingCoordinates) ? 'Choose an address' : 'Try again'}</button></div>}
-                {loading && !discoveryError && <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-6 text-sm font-semibold text-slate-600"><span className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent"/>Finding nearby providers for your address…</div>}
+                {loading && !discoveryError && <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-6 text-sm font-semibold text-slate-600"><span className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"/>Finding nearby providers for your address…</div>}
                 {!loading && !discoveryError && providers.length === 0 && (
                   <p className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">No eligible providers found within 30 km of your selected address.</p>
                 )}
@@ -236,7 +237,7 @@ export default function ProviderSelectionPage() {
                       className={`bg-white rounded-3xl border transition-all p-6 space-y-4 ${
                         prov.recommended
                           ? 'border-emerald-300 ring-2 ring-emerald-500/10 shadow-md'
-                          : 'border-slate-200/80 hover:border-indigo-200 shadow-xs'
+                          : 'border-slate-200/80 hover:border-blue-200 shadow-xs'
                       }`}
                     >
                       {/* Recommendation Header */}
@@ -250,7 +251,7 @@ export default function ProviderSelectionPage() {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-start gap-4">
                           <img
-                            src={prov.profileImage || prov.avatar || `https://ui-avatars.com/api/?background=4f46e5&color=ffffff&name=${encodeURIComponent(prov.providerName)}`}
+                            src={prov.profileImage || prov.avatar || `https://ui-avatars.com/api/?background=2563eb&color=ffffff&name=${encodeURIComponent(prov.providerName)}`}
                             alt={prov.providerName}
                             className="w-16 h-16 rounded-2xl object-cover border border-slate-200 shrink-0"
                           />
@@ -258,7 +259,7 @@ export default function ProviderSelectionPage() {
                             <h3 className="font-bold text-slate-900 text-base">{prov.providerName}</h3>
                             <div className="flex items-center gap-3 mt-1">
                               <StarRating rating={prov.rating || 4.8} reviewCount={prov.reviewCount || 12} />
-                              <span className="text-xs font-bold text-indigo-600">{providerDistance} km away</span>
+                              <span className="text-xs font-bold text-blue-600">{providerDistance} km away</span>
                             </div>
                             <span className="inline-block text-[11px] font-semibold text-emerald-700 mt-1">
                               • {(prov.availabilityStatus || prov.availability) === 'AVAILABLE_NOW' ? 'Available Now' : 'Available soon'}
@@ -269,7 +270,7 @@ export default function ProviderSelectionPage() {
                         <div className="text-right sm:border-l sm:border-slate-100 sm:pl-6 space-y-2">
                           <div>
                             <span className="block text-[10px] font-bold text-slate-400 uppercase">Estimated Total</span>
-                            <span className="text-xl font-extrabold text-indigo-600">₹{providerTotal}</span>
+                            <span className="text-xl font-extrabold text-blue-600">₹{providerTotal}</span>
                           </div>
 
                           <div className="flex items-center gap-2">
@@ -281,7 +282,7 @@ export default function ProviderSelectionPage() {
                             </button>
                             <button
                               onClick={() => handleSelectProvider(prov)}
-                              className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-600/20 transition flex items-center gap-1"
+                              className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-600/20 transition flex items-center gap-1"
                             >
                               Select & Continue <ChevronRight className="w-4 h-4" />
                             </button>
@@ -302,7 +303,7 @@ export default function ProviderSelectionPage() {
                   </div>
                   <button
                     onClick={() => setStepSubState('CHOICE')}
-                    className="text-xs font-bold text-indigo-600 hover:underline"
+                    className="text-xs font-bold text-blue-600 hover:underline"
                   >
                     Change Provider
                   </button>
@@ -312,7 +313,7 @@ export default function ProviderSelectionPage() {
                   
                   <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
                     <span className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">
-                      <Tag className="w-3.5 h-3.5 text-indigo-600" /> Selected Service
+                      <Tag className="w-3.5 h-3.5 text-blue-600" /> Selected Service
                     </span>
                     <h4 className="font-bold text-slate-900 text-base">{bookingDraft.service?.name}</h4>
                     <p className="text-xs text-slate-500">{bookingDraft.service?.categoryName}</p>
@@ -320,7 +321,7 @@ export default function ProviderSelectionPage() {
 
                   <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
                     <span className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">
-                      <User className="w-3.5 h-3.5 text-indigo-600" /> Selected Provider
+                      <User className="w-3.5 h-3.5 text-blue-600" /> Selected Provider
                     </span>
                     <h4 className="font-bold text-slate-900 text-base">{bookingDraft.provider?.providerName}</h4>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -331,7 +332,7 @@ export default function ProviderSelectionPage() {
 
                   <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
                     <span className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-indigo-600" /> Service Location
+                      <MapPin className="w-3.5 h-3.5 text-blue-600" /> Service Location
                     </span>
                     <h4 className="font-bold text-slate-900 text-sm">{bookingDraft.address?.label}</h4>
                     <p className="text-xs text-slate-600">{bookingDraft.address?.addressLine1}, {bookingDraft.address?.city}</p>
@@ -339,10 +340,10 @@ export default function ProviderSelectionPage() {
 
                   <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
                     <span className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-indigo-600" /> Date & Time Slot
+                      <Calendar className="w-3.5 h-3.5 text-blue-600" /> Date & Time Slot
                     </span>
                     <h4 className="font-bold text-slate-900 text-sm">{bookingDraft.bookingDate}</h4>
-                    <p className="text-xs text-indigo-600 font-bold">{bookingDraft.bookingTime}</p>
+                    <p className="text-xs text-blue-600 font-bold">{bookingDraft.bookingTime}</p>
                   </div>
 
                 </div>

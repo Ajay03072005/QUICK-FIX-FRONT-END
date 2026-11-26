@@ -71,7 +71,7 @@ export default function MyBookingsPage() {
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition ${
                 activeTab === tab.key
-                  ? 'bg-indigo-600 text-white shadow-xs'
+                  ? 'bg-blue-600 text-white shadow-xs'
                   : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
               }`}
             >
@@ -101,7 +101,7 @@ export default function MyBookingsPage() {
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-xs font-bold text-indigo-600">{bkg.bookingUniqueId}</span>
+                    <span className="text-xs font-bold text-blue-600">{bkg.bookingUniqueId}</span>
                     <div className="flex items-center gap-1.5">
                       <StatusBadge status={bkg.status} />
                       {(bkg.status === 'COMPLETED' || ['PAID', 'SUCCESS', 'FAILED', 'REFUND_PENDING', 'REFUNDED', 'PARTIALLY_REFUNDED'].includes(bkg.paymentStatus)) && <PaymentStatusBadge status={bkg.paymentStatus} />}
@@ -126,14 +126,14 @@ export default function MyBookingsPage() {
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
                   <div>
                     <span className="block text-[10px] font-bold text-slate-400 uppercase">Total Payable</span>
-                    <span className="text-lg font-extrabold text-indigo-600">₹{bkg.totalPrice}</span>
+                    <span className="text-lg font-extrabold text-blue-600">₹{bkg.totalPrice}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     {bkg.status === 'COMPLETED' && bkg.paymentStatus !== 'PAID' && bkg.paymentStatus !== 'SUCCESS' ? (
                       <Link
                         to={`/customer/payment/${bkg.bookingUniqueId}`}
-                        className="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1 shadow-xs"
+                        className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1 shadow-xs"
                       >
                         <CreditCard className="w-3.5 h-3.5" /> Pay Now
                       </Link>

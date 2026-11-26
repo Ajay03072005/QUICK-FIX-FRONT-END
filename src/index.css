@@ -2,14 +2,15 @@
 
 @layer base {
   :root {
-    --color-primary: #059669;
-    --color-primary-hover: #047857;
-    --color-primary-light: #ecfdf5;
-    --color-secondary: #0f172a;
-    --color-secondary-hover: #1e293b;
-    --color-success: #10b981;
+    --color-primary: #14213d; /* Deep Navy */
+    --color-primary-hover: #0f172a;
+    --color-secondary: #2563eb; /* Royal Blue */
+    --color-secondary-hover: #1d4ed8;
+    --color-accent: #f59e0b; /* Amber */
+    --color-accent-hover: #d97706;
+    --color-success: #16a34a;
     --color-warning: #f59e0b;
-    --color-error: #ef4444;
+    --color-error: #dc2626;
     --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
@@ -17,7 +18,7 @@
 body {
   font-family: var(--font-sans);
   background-color: #f8fafc;
-  color: #0f172a;
+  color: #111827;
   overflow-x: hidden;
 }
 
@@ -35,11 +36,11 @@ button:disabled {
 }
 
 :focus-visible {
-  outline: 2px solid #059669;
+  outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
-/* Custom Leaflet Map Pins & Popups - Emerald & Dark Slate Styling */
+/* Custom Leaflet Map Pins & Popups - Premium Navy & Blue Styling */
 .leaflet-container {
   width: 100%;
   height: 100%;
@@ -48,30 +49,29 @@ button:disabled {
   border: 1px solid #e2e8f0;
 }
 
-.leaflet-popup-content-wrapper {
-  border-radius: 1rem !important;
-  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08) !important;
-  padding: 6px !important;
-  border: 1px solid #e2e8f0 !important;
+.custom-provider-icon,
+.custom-customer-icon {
+  background: transparent;
+  border: none;
 }
 
-.custom-map-pin {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
-  transition: transform 0.2s ease-in-out;
+.custom-popup .leaflet-popup-content-wrapper {
+  background: #ffffff;
+  color: #14213d;
+  border-radius: 1rem;
+  padding: 0.5rem;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  border: 1px solid #e2e8f0;
 }
 
-.custom-map-pin:hover {
-  transform: scale(1.15);
+.custom-popup .leaflet-popup-tip {
+  background: #ffffff;
 }
 
-/* Scrollbar styling */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -87,13 +87,24 @@ button:disabled {
   background: #94a3b8;
 }
 
-/* Custom Subtle Glows & Effects */
-.emerald-glow {
-  box-shadow: 0 0 25px -5px rgba(5, 150, 105, 0.25);
+/* Premium Card & Glow utilities */
+.navy-glow {
+  box-shadow: 0 10px 30px -10px rgba(20, 33, 61, 0.35);
 }
 
-.slate-card {
+.blue-glow {
+  box-shadow: 0 10px 30px -10px rgba(37, 99, 235, 0.35);
+}
+
+.premium-card {
   background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.85);
-  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-card:hover {
+  border-color: rgba(37, 99, 235, 0.4);
+  box-shadow: 0 12px 24px -4px rgba(20, 33, 61, 0.08);
+  transform: translateY(-2px);
 }

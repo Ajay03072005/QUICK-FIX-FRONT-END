@@ -119,7 +119,7 @@ export default function ActiveServicePage() {
         <main className="container mx-auto px-4 py-20 flex-1 text-center space-y-4">
           <h1 className="text-2xl font-extrabold text-slate-900">Active booking not found</h1>
           <p className="text-sm text-slate-600">Select a booking from your dashboard to manage the service.</p>
-          <Link to="/provider/dashboard" className="inline-flex px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm">Back to Dashboard</Link>
+          <Link to="/provider/dashboard" className="inline-flex px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition">Back to Dashboard</Link>
         </main>
         <Footer />
       </div>
@@ -137,33 +137,33 @@ export default function ActiveServicePage() {
 
       <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 space-y-6 max-w-4xl">
         <div className="flex items-center justify-between">
-          <Link to="/provider/dashboard" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-indigo-600 transition">
+          <Link to="/provider/dashboard" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition">
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Link>
           <StatusBadge status={booking.status} />
         </div>
 
         {/* Hero Active Card */}
-        <div className="bg-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
-          <div className="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-[#14213d] via-[#1a2d54] to-[#0f172a] text-white p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
+          <div className="border-b border-white/10 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Active Customer Service</span>
+              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Active Customer Service</span>
               <h1 className="text-2xl font-extrabold text-white mt-0.5">{booking.serviceName || 'Home Service'}</h1>
               <p className="text-xs text-slate-400">Booking ID: {booking.bookingUniqueId || uniqueId}</p>
             </div>
 
             <div className="text-right">
               <span className="block text-[10px] font-bold text-slate-400 uppercase">Total Job Amount</span>
-              <span className="text-2xl font-extrabold text-cyan-300">₹{(booking.totalAmount || booking.totalPrice || 0).toFixed(2)}</span>
+              <span className="text-2xl font-extrabold text-amber-400">₹{(booking.totalAmount || booking.totalPrice || 0).toFixed(2)}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-300">
-            <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700">
+            <div className="bg-white/10 p-4 rounded-2xl border border-white/15 backdrop-blur-sm">
               <span className="block font-bold text-slate-400 uppercase">Customer Details</span>
               <p className="font-bold text-white text-sm mt-1">{booking.recipientName || booking.customerName || 'Customer'}</p>
               {booking.recipientPhone || booking.customerPhone ? (
-                <a href={`tel:${booking.recipientPhone || booking.customerPhone}`} className="text-cyan-400 font-bold hover:underline flex items-center gap-1 mt-1">
+                <a href={`tel:${booking.recipientPhone || booking.customerPhone}`} className="text-blue-400 font-bold hover:underline flex items-center gap-1 mt-1">
                   <Phone className="w-3.5 h-3.5" /> {booking.recipientPhone || booking.customerPhone}
                 </a>
               ) : (
@@ -171,7 +171,7 @@ export default function ActiveServicePage() {
               )}
             </div>
 
-            <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700">
+            <div className="bg-white/10 p-4 rounded-2xl border border-white/15 backdrop-blur-sm">
               <span className="block font-bold text-slate-400 uppercase">Destination Address</span>
               <p className="font-semibold text-slate-200 mt-1">{booking.addressLine1 || booking.customerAddress || 'Customer Address'}</p>
               {booking.distanceKm != null && (
@@ -185,7 +185,7 @@ export default function ActiveServicePage() {
             {isAccepted && (
               <button
                 onClick={handleMarkEnRoute}
-                className="w-full py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold text-base rounded-2xl shadow-xl transition flex items-center justify-center gap-2"
+                className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-base rounded-2xl shadow-xl transition flex items-center justify-center gap-2"
               >
                 <Navigation className="w-5 h-5" /> Mark En Route (Travelling to Site)
               </button>
@@ -194,7 +194,7 @@ export default function ActiveServicePage() {
             {(isAccepted || isEnRoute) && (
               <button
                 onClick={handleStartService}
-                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-base rounded-2xl shadow-xl transition flex items-center justify-center gap-2"
+                className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-base rounded-2xl shadow-xl transition flex items-center justify-center gap-2"
               >
                 <PlayCircle className="w-5 h-5" /> Start Service (Arrived On Site)
               </button>

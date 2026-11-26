@@ -99,22 +99,22 @@ export default function BookingPaymentPage() {
 
       <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 max-w-4xl space-y-6">
         <div className="flex items-center justify-between">
-          <Link to={`/customer/booking/${uniqueId}`} className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-indigo-600 transition">
+          <Link to={`/customer/bookings/${uniqueId}/track`} className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition">
             <ArrowLeft className="w-4 h-4" /> Back to Booking Tracking
           </Link>
           <PaymentStatusBadge status={isAlreadyPaid ? 'SUCCESS' : (payment?.status || booking.paymentStatus)} />
         </div>
 
         {/* Page Banner */}
-        <div className="bg-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="bg-gradient-to-r from-[#14213d] via-[#1a2d54] to-[#0f172a] text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
-            <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Secure Payment Gateway</span>
+            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Secure Payment Gateway</span>
             <h1 className="text-2xl font-extrabold text-white mt-1">Complete Service Payment</h1>
             <p className="text-xs text-slate-400 mt-1">Booking ID: {booking.bookingUniqueId || uniqueId}</p>
           </div>
-          <div className="text-right bg-slate-800 p-4 rounded-2xl border border-slate-700">
-            <span className="text-xs text-slate-400 block font-medium">Total Amount Due</span>
-            <span className="text-2xl font-black text-cyan-400">₹{(booking.totalAmount || booking.totalPrice || 0).toFixed(2)}</span>
+          <div className="text-right bg-white/10 p-4 rounded-2xl border border-white/15 backdrop-blur-sm">
+            <span className="text-xs text-slate-300 block font-medium">Total Amount Due</span>
+            <span className="text-2xl font-black text-amber-400">₹{(booking.totalAmount || booking.totalPrice || 0).toFixed(2)}</span>
           </div>
         </div>
 
@@ -153,7 +153,7 @@ export default function BookingPaymentPage() {
             <div className="md:col-span-5 space-y-4">
               <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
                 <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-indigo-600" /> Checkout Options
+                  <ShieldCheck className="w-5 h-5 text-blue-600" /> Checkout Options
                 </h3>
                 <p className="text-xs text-slate-500">
                   Pay instantly via Razorpay Checkout using UPI, Credit/Debit cards, NetBanking, or Wallet.

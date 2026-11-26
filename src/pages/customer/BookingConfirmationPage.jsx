@@ -16,7 +16,7 @@ export default function BookingConfirmationPage() {
         <main className="container mx-auto px-4 py-20 flex-1 max-w-xl text-center space-y-4">
           <h1 className="text-2xl font-extrabold text-slate-900">Booking not found</h1>
           <p className="text-sm text-slate-600">Open this page from a confirmed booking or view your saved bookings.</p>
-          <Link to="/customer/bookings" className="inline-flex px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm">View My Bookings</Link>
+          <Link to="/customer/bookings" className="inline-flex px-5 py-3 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition">View My Bookings</Link>
         </main>
         <Footer />
       </div>
@@ -38,7 +38,7 @@ export default function BookingConfirmationPage() {
           <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Request Submitted</span>
           <h1 className="text-3xl font-extrabold text-slate-900">✓ Booking Request Sent</h1>
           <p className="text-sm text-slate-600 max-w-md mx-auto">
-            Your request has been successfully saved to the backend database.
+            Your request has been successfully assigned to the service provider.
           </p>
         </div>
 
@@ -47,7 +47,7 @@ export default function BookingConfirmationPage() {
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
               <span className="block text-[10px] font-bold text-slate-400 uppercase">Booking Reference</span>
-              <span className="text-lg font-extrabold text-indigo-600">{booking.uniqueId || booking.bookingUniqueId}</span>
+              <span className="text-lg font-extrabold text-blue-600">{booking.uniqueId || booking.bookingUniqueId}</span>
             </div>
             <StatusBadge status={booking.status || 'PENDING'} />
           </div>
@@ -60,7 +60,7 @@ export default function BookingConfirmationPage() {
 
             <div className="flex justify-between items-center py-1 pt-2 border-t border-slate-100">
               <span className="text-slate-500 font-bold uppercase">Estimated Amount:</span>
-              <span className="text-base font-extrabold text-indigo-600">₹{booking.totalAmount || booking.totalPrice || 400}</span>
+              <span className="text-base font-extrabold text-blue-600">₹{booking.totalAmount || booking.totalPrice || 400}</span>
             </div>
           </div>
         </div>
@@ -69,7 +69,7 @@ export default function BookingConfirmationPage() {
         <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
           <Link
             to={`/customer/bookings/${booking.uniqueId || booking.bookingUniqueId}/track`}
-            className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center gap-2"
+            className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center gap-2"
           >
             Track Booking Status <ArrowRight className="w-4 h-4" />
           </Link>

@@ -25,21 +25,27 @@ export const serviceApi = {
     try {
       const res = await axiosInstance.get('/services');
       if (Array.isArray(res.data) && res.data.length > 0) {
-        return res.data.map(srv => ({
-          uniqueId: srv.uniqueId,
-          categoryId: srv.serviceType,
-          categoryName: String(srv.serviceType || 'Service').replaceAll('_', ' '),
-          name: String(srv.serviceType || 'Service').replaceAll('_', ' '),
-          shortDescription: srv.description || 'Professional home service provided by verified local experts.',
-          longDescription: srv.description || 'Professional home service provided by verified local experts.',
-          startingPrice: Number(srv.serviceCharge) || 399,
-          rating: 4.8,
-          reviewCount: 24,
-          estimatedDuration: '45 - 60 mins',
-          baseDistanceCharge: 30,
-          included: DEFAULT_INCLUDED,
-          excluded: DEFAULT_EXCLUDED
-        }));
+        return res.data.map(srv => {
+          const startingPrice = Number(srv.serviceCharge) || 0;
+          const pricingModel = srv.pricingModel || 'FIXED';
+          return {
+            id: srv.id,
+            uniqueId: srv.uniqueId,
+            categoryId: srv.serviceType,
+            categoryName: String(srv.serviceType || 'Service').replaceAll('_', ' '),
+            name: String(srv.serviceType || 'Service').replaceAll('_', ' '),
+            pricingModel: pricingModel,
+            shortDescription: srv.description || 'Professional home service provided by verified local experts.',
+            longDescription: srv.description || 'Professional home service provided by verified local experts.',
+            startingPrice: startingPrice,
+            rating: 4.8,
+            reviewCount: 24,
+            estimatedDuration: '45 - 60 mins',
+            baseDistanceCharge: 30,
+            included: DEFAULT_INCLUDED,
+            excluded: DEFAULT_EXCLUDED
+          };
+        });
       }
       return [];
     } catch (e) {
@@ -51,14 +57,18 @@ export const serviceApi = {
     try {
       const res = await axiosInstance.get(`/services/${uniqueId}`);
       const data = res.data || {};
+      const startingPrice = Number(data.serviceCharge) || 0;
+      const pricingModel = data.pricingModel || 'FIXED';
       return {
+        id: data.id,
         uniqueId: data.uniqueId || uniqueId,
         categoryId: data.serviceType,
         categoryName: String(data.serviceType || 'Service').replaceAll('_', ' '),
         name: String(data.serviceType || 'Service').replaceAll('_', ' '),
+        pricingModel: pricingModel,
         shortDescription: data.description || 'Professional home service provided by verified local experts.',
         longDescription: data.description || 'Professional home service provided by verified local experts.',
-        startingPrice: Number(data.serviceCharge) || 399,
+        startingPrice: startingPrice,
         rating: 4.8,
         reviewCount: 24,
         estimatedDuration: '45 - 60 mins',
@@ -75,6 +85,26 @@ export const serviceApi = {
         // ignore
       }
       throw new Error('Unable to load service from the database', { cause: error });
+    }
+  },
+
+  getPricingConfig: async (uniqueId) => {
+    try {
+      const res = await axiosInstance.get(`/services/${uniqueId}/pricing`);
+      return res.data;
+    } catch (e) {
+      console.error('Failed to get service pricing config:', e);
+      throw e;
+    }
+  },
+
+  calculatePrice: async (payload) => {
+    try {
+      const res = await axiosInstance.post('/services/calculate-price', payload);
+      return res.data;
+    } catch (e) {
+      console.error('Price calculation error:', e);
+      throw e;
     }
   }
 };

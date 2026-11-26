@@ -16,9 +16,11 @@ import {
   CreditCard,
   RefreshCw,
   Eye,
-  Send
+  Send,
+  Layers
 } from 'lucide-react';
 import { adminApi } from '../../api/adminApi';
+import { serviceApi } from '../../api/serviceApi';
 
 export default function AdminPortalPage() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -30,6 +32,7 @@ export default function AdminPortalPage() {
   const [bookings, setBookings] = useState([]);
   const [ledgerEntries, setLedgerEntries] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [services, setServices] = useState([]);
 
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,17 +46,19 @@ export default function AdminPortalPage() {
     setLoading(true);
     setError(null);
     try {
-      const [provRes, bookRes, ledgerRes, auditRes] = await Promise.allSettled([
+      const [provRes, bookRes, ledgerRes, auditRes, srvRes] = await Promise.allSettled([
         adminApi.getAllProviders(),
         adminApi.getAllBookings(),
         adminApi.getAllLedgerEntries(),
-        adminApi.getAuditLogs()
+        adminApi.getAuditLogs(),
+        serviceApi.getAllServices()
       ]);
 
       if (provRes.status === 'fulfilled') setProviders(provRes.value || []);
       if (bookRes.status === 'fulfilled') setBookings(bookRes.value || []);
       if (ledgerRes.status === 'fulfilled') setLedgerEntries(ledgerRes.value || []);
       if (auditRes.status === 'fulfilled') setAuditLogs(auditRes.value || []);
+      if (srvRes.status === 'fulfilled') setServices(srvRes.value || []);
     } catch (err) {
       console.error("Failed to load admin portal data:", err);
       setError("Failed to synchronize admin console data.");
@@ -143,6 +148,7 @@ export default function AdminPortalPage() {
             { id: 'overview', label: 'Overview & Metrics', icon: Activity },
             { id: 'providers', label: `Provider Queue (${pendingVerifications})`, icon: Wrench },
             { id: 'bookings', label: `Bookings (${bookings.length})`, icon: CalendarCheck },
+            { id: 'services', label: `Services (${services.length})`, icon: Layers },
             { id: 'finance', label: 'Finance & Ledger', icon: DollarSign },
             { id: 'audit', label: 'Audit Logs', icon: FileText }
           ].map(tab => {
@@ -373,6 +379,88 @@ export default function AdminPortalPage() {
                   {bookings.length === 0 && (
                     <tr>
                       <td colSpan="6" className="p-6 text-center text-slate-500">No bookings found in backend database.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Service Catalogue & Dynamic Pricing */}
+        {activeTab === 'services' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold">Service Catalogue & Dynamic Pricing Models</h2>
+                <p className="text-xs text-slate-400">Database-driven catalogue with dynamic pricing calculators</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Filter services..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="rounded-xl border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-slate-800 bg-slate-950 text-slate-400">
+                  <tr>
+                    <th className="p-4">Service</th>
+                    <th className="p-4">Category</th>
+                    <th className="p-4">Pricing Model</th>
+                    <th className="p-4">Starting Price</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {services
+                    .filter(s => !searchTerm || s.name?.toLowerCase().includes(searchTerm.toLowerCase()) || s.categoryName?.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((srv) => (
+                      <tr key={srv.uniqueId} className="hover:bg-slate-800/40">
+                        <td className="p-4">
+                          <div className="font-bold text-white">{srv.name}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">{srv.uniqueId}</div>
+                        </td>
+                        <td className="p-4 text-slate-300">{srv.categoryName || 'General'}</td>
+                        <td className="p-4">
+                          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            srv.pricingModel === 'FIXED' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                            srv.pricingModel === 'OPTIONS' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            srv.pricingModel === 'PER_UNIT' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                            srv.pricingModel === 'HOURLY' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' :
+                            srv.pricingModel === 'PACKAGE' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
+                            'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                          }`}>
+                            {srv.pricingModel || 'FIXED'}
+                          </span>
+                        </td>
+                        <td className="p-4 font-bold text-slate-200">
+                          {srv.pricingModel === 'QUOTATION' ? 'Custom Quote' : `₹${srv.startingPrice}`}
+                        </td>
+                        <td className="p-4">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                            <CheckCircle className="h-3 w-3" /> Active
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          <Link
+                            to={`/services/${srv.uniqueId}`}
+                            className="inline-flex items-center gap-1 rounded-lg bg-cyan-500/10 px-2.5 py-1 text-xs font-semibold text-cyan-400 hover:bg-cyan-500/20"
+                          >
+                            <Eye className="h-3 w-3" /> View
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  {services.length === 0 && (
+                    <tr>
+                      <td colSpan="6" className="p-6 text-center text-slate-500">No services loaded from database.</td>
                     </tr>
                   )}
                 </tbody>

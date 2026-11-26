@@ -36,9 +36,9 @@ export default function StatusTimeline({ currentStatus = 'WAITING_ACCEPTANCE', h
     <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-6">
       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
         <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-          <Clock className="w-5 h-5 text-emerald-600" /> Booking Status Timeline
+          <Clock className="w-5 h-5 text-blue-600" /> Booking Status Timeline
         </h3>
-        <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60">Live Status Tracker</span>
+        <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200/60">Live Status Tracker</span>
       </div>
 
       <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
@@ -52,9 +52,9 @@ export default function StatusTimeline({ currentStatus = 'WAITING_ACCEPTANCE', h
               <div
                 className={`absolute -left-6 top-1 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
                   state === 'completed'
-                    ? 'bg-emerald-600 text-white ring-4 ring-emerald-50'
+                    ? 'bg-blue-600 text-white ring-4 ring-blue-50'
                     : state === 'current'
-                    ? 'bg-emerald-600 text-white ring-4 ring-emerald-500/20 animate-pulse'
+                    ? 'bg-[#14213d] text-white ring-4 ring-blue-500/20 animate-pulse'
                     : 'bg-white border-2 border-slate-300 text-transparent'
                 }`}
               >
@@ -69,7 +69,7 @@ export default function StatusTimeline({ currentStatus = 'WAITING_ACCEPTANCE', h
                       state === 'completed'
                         ? 'text-slate-900'
                         : state === 'current'
-                        ? 'text-emerald-700 font-extrabold'
+                        ? 'text-blue-700 font-extrabold'
                         : 'text-slate-400'
                     }`}
                   >

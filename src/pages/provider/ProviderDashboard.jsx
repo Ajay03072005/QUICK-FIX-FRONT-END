@@ -99,15 +99,15 @@ export default function ProviderDashboard() {
 
           <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-1">
             <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Today's Earnings</span>
-            <span className="text-3xl font-extrabold text-indigo-600">₹{stats.todaysEarnings.toLocaleString()}</span>
+            <span className="text-3xl font-extrabold text-blue-600">₹{stats.todaysEarnings.toLocaleString()}</span>
           </div>
         </div>
 
         {/* Active Service Banner */}
         {activeJob && (
-          <div className="bg-gradient-to-r from-indigo-900 to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="bg-gradient-to-r from-[#14213d] via-[#1a2d54] to-[#0f172a] text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="px-3 py-1 bg-cyan-500/20 text-cyan-300 rounded-full text-xs font-bold border border-cyan-400/30">
+              <span className="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-xs font-bold border border-amber-400/30">
                 ⚡ Active Job In Progress
               </span>
               <h2 className="text-2xl font-extrabold text-white">{activeJob.serviceName}</h2>
@@ -118,7 +118,7 @@ export default function ProviderDashboard() {
 
             <Link
               to={`/provider/active-service/${activeJob.bookingUniqueId}`}
-              className="px-6 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2 shrink-0"
+              className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2 shrink-0"
             >
               Open Active Job Screen <ArrowRight className="w-4 h-4" />
             </Link>
@@ -132,7 +132,7 @@ export default function ProviderDashboard() {
               <h2 className="text-xl font-extrabold text-slate-900">New Booking Requests</h2>
               <p className="text-xs text-slate-500">Respond to incoming customer job requests near you</p>
             </div>
-            <Link to="/provider/booking-requests" className="text-xs font-bold text-indigo-600 hover:underline">View All</Link>
+            <Link to="/provider/booking-requests" className="text-xs font-bold text-blue-600 hover:underline">View All</Link>
           </div>
 
           <div className="space-y-4">
@@ -159,11 +159,11 @@ export default function ProviderDashboard() {
                 <div className="flex items-center gap-4">
                   <div className="text-right">
                     <span className="block text-[10px] font-bold text-slate-400 uppercase">Estimated Fare</span>
-                    <span className="text-xl font-extrabold text-indigo-600">₹{req.totalPrice}</span>
+                    <span className="text-xl font-extrabold text-blue-600">₹{req.totalPrice}</span>
                   </div>
                   <button
                     onClick={() => handleAcceptRequest(req.bookingUniqueId)}
-                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition"
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition"
                   >
                     Accept Job
                   </button>

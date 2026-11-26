@@ -16,7 +16,7 @@ export default function SelectAddressPage() {
   const { showToast } = useNotification();
   const { bookingDraft, updateDraft } = useBooking();
   const [addresses, setAddresses] = useState([]);
-  const [selectedAddrId, setSelectedAddrId] = useState(bookingDraft.address?.id || 'ADDR-01');
+  const [selectedAddrId, setSelectedAddrId] = useState(bookingDraft.address?.id || null);
   const [date, setDate] = useState(bookingDraft.bookingDate || new Date(Date.now() + 86400000).toISOString().split('T')[0]);
   const [timeSlot, setTimeSlot] = useState(bookingDraft.bookingTime || '10:30 AM');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -27,13 +27,18 @@ export default function SelectAddressPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user?.customerUniqueId) customerApi.getSavedAddresses(user.customerUniqueId).then(data => {
-      setAddresses(data);
-      if (data.length > 0 && !bookingDraft.address) {
-        updateDraft({ address: data[0] });
-      }
-    });
-  }, []);
+    if (user?.customerUniqueId) {
+      customerApi.getSavedAddresses(user.customerUniqueId).then(data => {
+        setAddresses(data);
+        if (data && data.length > 0) {
+          const matched = bookingDraft.address ? data.find(a => a.id === bookingDraft.address.id) : null;
+          const current = matched || data[0];
+          setSelectedAddrId(current.id);
+          updateDraft({ address: current });
+        }
+      });
+    }
+  }, [user?.customerUniqueId]);
 
   useEffect(() => {
     if (!showAddModal || editingAddress || newAddr.addressLine1 || locatingAddress) return;
@@ -123,6 +128,10 @@ export default function SelectAddressPage() {
 
   const handleContinue = () => {
     const chosenAddr = addresses.find(a => a.id === selectedAddrId) || addresses[0];
+    if (!chosenAddr) {
+      showToast('Please add or select a service address.', 'error');
+      return;
+    }
     const appointmentChanged = bookingDraft.address?.id !== chosenAddr?.id
       || bookingDraft.bookingDate !== date
       || bookingDraft.bookingTime !== timeSlot;
@@ -155,7 +164,7 @@ export default function SelectAddressPage() {
                 </div>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5"
+                  className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5"
                 >
                   <Plus className="w-4 h-4" /> Add New Address
                 </button>
@@ -170,20 +179,20 @@ export default function SelectAddressPage() {
                       onClick={() => handleSelectAddress(addr)}
                       className={`p-5 rounded-2xl border transition-all cursor-pointer space-y-3 ${
                         isSelected
-                          ? 'border-indigo-600 ring-2 ring-indigo-600/20 bg-indigo-50/20 shadow-xs'
-                          : 'border-slate-200/80 hover:border-indigo-200'
+                          ? 'border-emerald-600 ring-2 ring-emerald-600/20 bg-emerald-50/20 shadow-xs'
+                          : 'border-slate-200/80 hover:border-emerald-200'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-2 font-bold text-xs text-slate-900 uppercase">
-                          {addr.type === 'HOME' && <Home className="w-4 h-4 text-indigo-600" />}
-                          {addr.type === 'WORK' && <Briefcase className="w-4 h-4 text-indigo-600" />}
-                          {addr.type === 'OTHER' && <Building className="w-4 h-4 text-indigo-600" />}
+                          {addr.type === 'HOME' && <Home className="w-4 h-4 text-emerald-600" />}
+                          {addr.type === 'WORK' && <Briefcase className="w-4 h-4 text-emerald-600" />}
+                          {addr.type === 'OTHER' && <Building className="w-4 h-4 text-emerald-600" />}
                           {addr.label}
                         </span>
                         <span className="flex items-center gap-2">
-                          {isSelected && <CheckCircle2 className="w-4 h-4 text-indigo-600" />}
-                          <button type="button" onClick={(event) => startEditingAddress(event, addr)} aria-label={`Edit ${addr.label} address`} className="rounded-lg p-1.5 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600"><Pencil className="h-4 w-4"/></button>
+                          {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                          <button type="button" onClick={(event) => startEditingAddress(event, addr)} aria-label={`Edit ${addr.label} address`} className="rounded-lg p-1.5 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><Pencil className="h-4 w-4"/></button>
                         </span>
                       </div>
                       <p className="text-xs text-slate-600 leading-relaxed font-medium">
@@ -248,7 +257,7 @@ export default function SelectAddressPage() {
 
             <button
               onClick={handleContinue}
-              className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2"
             >
               Continue to Choose Provider <ChevronRight className="w-4 h-4" />
             </button>

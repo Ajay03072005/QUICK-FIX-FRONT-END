@@ -119,7 +119,7 @@ export default function BookingTrackingPage() {
 
       <main className="container mx-auto px-4 lg:px-8 py-8 flex-1 space-y-6">
         <div className="flex items-center justify-between">
-          <Link to="/customer/bookings" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-indigo-600 transition">
+          <Link to="/customer/bookings" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition">
             <ArrowLeft className="w-4 h-4" /> Back to My Bookings
           </Link>
           <button
@@ -131,17 +131,17 @@ export default function BookingTrackingPage() {
         </div>
 
         {/* Top Header Card */}
-        <div className="bg-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-gradient-to-r from-[#14213d] via-[#1a2d54] to-[#0f172a] text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Live Tracker</span>
+              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Live Tracker</span>
               <StatusBadge status={booking.status} />
             </div>
             <h1 className="text-2xl font-extrabold text-white mt-1">{booking.serviceName || 'Home Service'}</h1>
             <p className="text-xs text-slate-400 mt-0.5">Booking ID: {booking.bookingUniqueId || uniqueId}</p>
           </div>
 
-          <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex items-center gap-4">
+          <div className="bg-white/10 p-4 rounded-2xl border border-white/15 backdrop-blur-sm flex items-center gap-4">
             <img
               src={booking.providerAvatar || 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150'}
               alt={booking.providerName || 'Provider'}
@@ -152,7 +152,7 @@ export default function BookingTrackingPage() {
               <h4 className="font-bold text-white text-sm">{booking.providerName || 'Quick-Fix Partner'}</h4>
               <a
                 href={`tel:${booking.providerPhone || '+919876543210'}`}
-                className="text-xs text-cyan-400 font-bold hover:underline flex items-center gap-1 mt-0.5"
+                className="text-xs text-blue-400 font-bold hover:underline flex items-center gap-1 mt-0.5"
               >
                 <Phone className="w-3 h-3" /> {booking.providerPhone || '+91 98765 43210'}
               </a>
@@ -185,24 +185,24 @@ export default function BookingTrackingPage() {
             </button>
           </section>
         ) : booking.status === 'COMPLETED' ? (
-          <section className="rounded-3xl border border-indigo-200 bg-indigo-50/90 p-5 sm:flex sm:items-center sm:justify-between sm:gap-6 shadow-md">
+          <section className="rounded-3xl border border-blue-200 bg-blue-50/90 p-5 sm:flex sm:items-center sm:justify-between sm:gap-6 shadow-md">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-indigo-100 text-indigo-600 rounded-2xl">
+              <div className="p-3 bg-blue-100 text-blue-600 rounded-2xl">
                 <CreditCard className="w-6 h-6 animate-pulse" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-extrabold text-indigo-950">Service Completed — Payment Due</h2>
+                  <h2 className="text-sm font-extrabold text-blue-950">Service Completed — Payment Due</h2>
                   <PaymentStatusBadge status="PENDING" />
                 </div>
-                <p className="mt-0.5 text-xs text-indigo-800">
+                <p className="mt-0.5 text-xs text-blue-800">
                   Your service is complete. Please complete online payment of ₹{(booking.totalPrice || booking.totalAmount || 0).toFixed(2)}.
                 </p>
               </div>
             </div>
             <Link
               to={`/customer/payment/${booking.bookingUniqueId || uniqueId}`}
-              className="mt-3 sm:mt-0 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-2.5 text-xs font-black text-white shadow-md hover:from-indigo-700 hover:to-blue-700 flex items-center gap-2"
+              className="mt-3 sm:mt-0 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-black text-white shadow-md hover:bg-blue-700 flex items-center gap-2"
             >
               <CreditCard className="w-4 h-4" /> Pay Now
             </Link>
@@ -216,7 +216,7 @@ export default function BookingTrackingPage() {
               <p className="mt-1 text-xs text-amber-800">You may change the selected provider or cancel this request until a provider accepts it.</p>
             </div>
             <div className="mt-3 flex flex-wrap gap-2 sm:mt-0">
-              <button onClick={handleOpenProviderChange} disabled={updating} className="rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-indigo-700 shadow-sm ring-1 ring-inset ring-indigo-200 hover:bg-indigo-50">
+              <button onClick={handleOpenProviderChange} disabled={updating} className="rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-blue-700 shadow-sm ring-1 ring-inset ring-blue-200 hover:bg-blue-50">
                 Change Provider
               </button>
               <button onClick={handleCancelBooking} disabled={updating} className="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700">
@@ -235,7 +235,7 @@ export default function BookingTrackingPage() {
             {providers.length === 0 ? <p className="text-sm text-slate-500">No alternative providers are available nearby.</p> : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {providers.map((provider) => (
-                  <button key={provider.providerUniqueId} disabled={updating} onClick={() => handleChangeProvider(provider.providerUniqueId)} className="rounded-2xl border border-slate-200 p-4 text-left hover:border-indigo-300 hover:bg-indigo-50">
+                  <button key={provider.providerUniqueId} disabled={updating} onClick={() => handleChangeProvider(provider.providerUniqueId)} className="rounded-2xl border border-slate-200 p-4 text-left hover:border-blue-300 hover:bg-blue-50">
                     <span className="block font-bold text-slate-900">{provider.providerName}</span>
                     <span className="mt-1 block text-xs text-slate-500">{provider.distance} km away · ₹{provider.totalAmount}</span>
                   </button>
